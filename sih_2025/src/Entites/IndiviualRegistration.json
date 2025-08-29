@@ -1,0 +1,51 @@
+{
+  "name": "IndividualRegistration",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the individual"
+    },
+    "year": {
+      "type": "string",
+      "description": "Academic year"
+    },
+    "branch": {
+      "type": "string",
+      "description": "Branch/Department"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of skills"
+    },
+    "contact_number": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "github_link": {
+      "type": "string",
+      "description": "GitHub profile link (optional)"
+    },
+    "discord_link": {
+      "type": "string",
+      "description": "Discord link (optional)"
+    },
+    "has_deployed_software": {
+      "type": "boolean",
+      "description": "Whether they have deployed software before"
+    },
+    "deployment_link": {
+      "type": "string",
+      "description": "Link to deployed software (optional)"
+    }
+  },
+  "required": [
+    "name",
+    "year",
+    "branch",
+    "contact_number"
+  ]
+}

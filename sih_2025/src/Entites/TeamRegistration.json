@@ -1,0 +1,67 @@
+{
+  "name": "TeamRegistration",
+  "type": "object",
+  "properties": {
+    "team_name": {
+      "type": "string",
+      "description": "Name of the team"
+    },
+    "problem_statement": {
+      "type": "string",
+      "description": "Hackathon problem statement (optional)"
+    },
+    "leader": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "year": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "github_link": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "discord": {
+          "type": "string"
+        }
+      }
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "github_link": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "team_name",
+    "leader"
+  ]
+}
