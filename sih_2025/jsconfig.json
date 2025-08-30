@@ -8,4 +8,3 @@
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }
-Error: Command "vite build" exited with 1
