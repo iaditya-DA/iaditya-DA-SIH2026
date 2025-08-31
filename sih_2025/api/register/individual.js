@@ -1,6 +1,6 @@
 // api/register/individual.js
 import connectDB from '../../lib/mongo.js';
-import { Individual } from '../../Models/SIHSCHEMA';
+import { Individual } from '../../Models/SIHSCHEMA.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

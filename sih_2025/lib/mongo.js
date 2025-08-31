@@ -1,7 +1,8 @@
-// lib/mongo.js
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
 
 const MONGO_URI = 'mongodb+srv://Gautam:jaiswani@imcoolthanyou.ovv6hm0.mongodb.net/?retryWrites=true&w=majority&appName=imcoolthanyou';
+
 
 if (!MONGO_URI) {
   throw new Error("❌ MONGO_URI is not set in environment variables");
@@ -10,8 +11,9 @@ if (!MONGO_URI) {
 let isConnected = false;
 
 async function connectDB() {
-  if (isConnected) return;
-
+  if (isConnected) {
+    return;
+  }
   try {
     await mongoose.connect(MONGO_URI);
     isConnected = true;
@@ -22,4 +24,5 @@ async function connectDB() {
   }
 }
 
-module.exports = connectDB;
+export default connectDB;
+

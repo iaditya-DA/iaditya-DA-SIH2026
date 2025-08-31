@@ -59,7 +59,5 @@ const TeamSchema = new Schema({
 });
 
 // Fix for Vercel Serverless (avoid OverwriteModelError)
-const Individual = mongoose.models.Individual || mongoose.model('Individual', IndividualSchema);
-const Team = mongoose.models.Team || mongoose.model('Team', TeamSchema);
-
-export { Individual, Team };
+export const Individual = mongoose.models.Individual || mongoose.model('Individual', IndividualSchema);
+export const Team = mongoose.models.Team || mongoose.model('Team', TeamSchema);
