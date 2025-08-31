@@ -1,4 +1,4 @@
-const connectDB = require('../../lib/mongo');
+const connectDB = require('../lib/mongo');
 const { Individual } = require('../../Models/SIHSCHEMA');
 
 module.exports = async (req, res) => {

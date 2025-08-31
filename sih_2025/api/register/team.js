@@ -1,5 +1,5 @@
 // api/register/team.js
-const connectDB = require('../../../lib/mongo');
+const connectDB = require('../../lib/mongo');
 const { Team } = require('../../../Models/SIHSCHEMA');
 
 module.exports = async (req, res) => {
