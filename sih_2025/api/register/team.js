@@ -1,5 +1,5 @@
 import connectDB from '../../lib/mongo.js';
-import { Team } from '../../Models/SIHSCHEMA.js';
+import { Team } from '../Models/SIHSCHEMA.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
