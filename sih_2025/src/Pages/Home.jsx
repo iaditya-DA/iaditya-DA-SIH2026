@@ -598,7 +598,7 @@ export default function App() {
             .panel .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(134, 239, 172, 0.3); border-radius: 20px; border: 3px solid transparent; }
             .panel .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(134, 239, 172, 0.5); }
             @keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-            .animate-scroll-x { animation: scroll-x 10s linear infinite; }
+            .animate-scroll-x { animation: scroll-x 40s linear infinite; }
             .group:hover .animate-scroll-x { animation-play-state: paused; }
         `}</style>
     </div>

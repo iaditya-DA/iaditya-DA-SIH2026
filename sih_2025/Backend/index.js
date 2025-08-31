@@ -5,7 +5,7 @@ const cors = require('cors');
 
 // Import the Mongoose models from your schemas.js file
 // Make sure this file is in the same directory as your server.js
-const { Individual, Team } = require('./Models/SIHSCHEMA.js'); 
+const { Individual, Team } = require('../Models/SIHSCHEMA.js'); 
 
 // --- Basic Setup ---
 const app = express();
