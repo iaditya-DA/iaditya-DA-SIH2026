@@ -2,23 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // --- Reusable Components ---
 
-// Expanded skills lists
 const SKILLS_LIST = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Development', 'UI/UX Design', 'Project Management', 'Communication', 'Presentation', 'Cloud Computing', 'Cybersecurity', 'Blockchain'];
 const DEV_SKILLS = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Development', 'Cloud Computing', 'Cybersecurity', 'Blockchain'];
 
 const InstagramIcon = ({ className }) => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
@@ -26,22 +14,10 @@ const InstagramIcon = ({ className }) => (
 );
 
 const BackArrowIcon = ({ className }) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width="24" 
-        height="24" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        className={className}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <polyline points="15 18 9 12 15 6"></polyline>
     </svg>
 );
-
 
 const SkillsSelector = ({ selectedSkills, onSkillsChange }) => {
     const toggleSkill = (skill) => {
@@ -58,11 +34,7 @@ const SkillsSelector = ({ selectedSkills, onSkillsChange }) => {
                     type="button"
                     key={skill}
                     onClick={() => toggleSkill(skill)}
-                    className={`px-3 py-1.5 text-sm rounded-full transition-all duration-200 ${
-                        selectedSkills.includes(skill)
-                            ? 'bg-cyan-500 text-white font-semibold shadow-md'
-                            : 'bg-slate-600/50 text-slate-300 hover:bg-slate-600'
-                    }`}
+                    className={`px-3 py-1.5 text-sm rounded-full transition-all duration-200 ${selectedSkills.includes(skill) ? 'bg-cyan-500 text-white font-semibold shadow-md' : 'bg-slate-600/50 text-slate-300 hover:bg-slate-600'}`}
                 >
                     {skill}
                 </button>
@@ -75,14 +47,12 @@ const SkillsSelector = ({ selectedSkills, onSkillsChange }) => {
 
 const HomePage = ({ setPage }) => {
     const [openFaq, setOpenFaq] = useState(null);
-
     const MOCK_TESTIMONIALS = [
         { type: 'team', text: "Team 'Quantum Coders' just registered with a fascinating idea on blockchain voting systems!" },
         { type: 'individual', text: "Aarav S., a skilled React developer, found his team and is ready to build." },
         { type: 'team', text: "The 'Data Dynamos' have joined, bringing their expertise in AI/ML to the competition." },
         { type: 'individual', text: "Priya M. from IT has teamed up with senior students for her first-ever hackathon." }
     ];
-
     const FAQ_DATA = [
         { q: "Who is eligible to participate?", a: "All students currently enrolled in any course at LNCT University, Bhopal, are eligible to participate." },
         { q: "Is there a registration fee?", a: "No, there is absolutely no registration fee. Participation is free for all eligible students." },
@@ -90,10 +60,12 @@ const HomePage = ({ setPage }) => {
         { q: "Can I register as an individual?", a: "Yes! You can register as an individual. You can then find other individuals on the 'Registered' page to form a team." },
         { q: "What if I have an issue during registration?", a: "Please reach out to the contacts listed at the bottom of this page for any registration-related issues." }
     ];
-
+    
     useEffect(() => {
-        const anime = window.anime;
-        if (anime) {
+        const initAnimations = () => {
+            const anime = window.anime;
+            if (!anime) return; 
+
             anime.timeline({ easing: 'easeOutExpo' })
                 .add({ targets: '.title-animate', translateY: [-50, 0], opacity: [0, 1], duration: 800 })
                 .add({ targets: '.subtitle-animate', translateY: [-30, 0], opacity: [0, 1], duration: 600 }, '-=400')
@@ -109,18 +81,28 @@ const HomePage = ({ setPage }) => {
             }, { threshold: 0.1 });
 
             document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+        };
+
+        if (window.anime) {
+            initAnimations();
+        } else {
+            const interval = setInterval(() => {
+                if (window.anime) {
+                    clearInterval(interval);
+                    initAnimations();
+                }
+            }, 100);
+            return () => clearInterval(interval);
         }
     }, []);
 
     return (
         <div className="flex-grow text-white">
-            {/* Hero Section */}
             <div className="text-center px-4 pt-12 pb-20">
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tight title-animate bg-clip-text text-transparent bg-gradient-to-br from-white to-cyan-400">SIH 2025 Registration</h1>
                 <p className="text-xl md:text-2xl mt-4 text-cyan-200/80 subtitle-animate">LNCT University Bhopal</p>
                 <div className="home-content-animate my-10 max-w-3xl mx-auto bg-slate-800/30 p-8 rounded-2xl backdrop-blur-sm border border-slate-700/50">
                     <h2 className="text-3xl font-bold text-cyan-300 mb-4">Join the Innovation Wave</h2>
-                   
                 </div>
                 <div className="space-y-4 md:space-y-0 md:space-x-6 flex flex-col md:flex-row justify-center">
                     <button onClick={() => setPage('team')} className="home-button px-10 py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Register a Team</button>
@@ -128,15 +110,9 @@ const HomePage = ({ setPage }) => {
                     <button onClick={() => setPage('registered')} className="home-button px-10 py-4 text-xl bg-slate-700 hover:bg-slate-600 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">View Registered Participants</button>
                 </div>
             </div>
-
-            {/* Latest Activity Scroller */}
             <div className="py-20 animate-on-scroll">
                 <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Latest Activity</h2>
-                <div
-                    onClick={() => setPage('registered')}
-                    className="group relative w-full overflow-hidden cursor-pointer fade-in-up"
-                    style={{ maskImage: 'linear-gradient(to right, transparent, white 10%, white 90%, transparent)' }}
-                >
+                <div onClick={() => setPage('registered')} className="group relative w-full overflow-hidden cursor-pointer fade-in-up" style={{ maskImage: 'linear-gradient(to right, transparent, white 10%, white 90%, transparent)' }}>
                     <div className="flex animate-scroll-x">
                         {[...MOCK_TESTIMONIALS, ...MOCK_TESTIMONIALS].map((item, index) => (
                             <div key={index} className="flex-shrink-0 w-80 h-32 flex items-center bg-slate-800/50 border border-slate-700 rounded-lg p-6 mx-4">
@@ -146,9 +122,6 @@ const HomePage = ({ setPage }) => {
                     </div>
                 </div>
             </div>
-
-
-            {/* FAQ Section */}
             <div className="py-20 bg-slate-900/50 animate-on-scroll">
                 <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Frequently Asked Questions</h2>
                 <div className="max-w-3xl mx-auto space-y-4 px-4">
@@ -159,34 +132,24 @@ const HomePage = ({ setPage }) => {
                                 <span className={`transform transition-transform duration-300 ${openFaq === index ? 'rotate-180' : ''}`}>▼</span>
                             </button>
                             <div className={`transition-all duration-300 ease-in-out ${openFaq === index ? 'max-h-96' : 'max-h-0'}`}>
-                                <div className="p-5 border-t border-slate-700 text-slate-300">
-                                    {faq.a}
-                                </div>
+                                <div className="p-5 border-t border-slate-700 text-slate-300">{faq.a}</div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-            
-            {/* Contact Section */}
             <div className="py-20 animate-on-scroll">
                 <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Need Help?</h2>
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center items-center gap-12 px-4">
                     <div className="text-center fade-in-up">
                         <p className="text-lg text-slate-300">Vikas Singh</p>
                         <p className="font-mono text-cyan-400 mt-1">+91 9039389755</p>
-                        <a href="https://www.instagram.com/xvikasingh17" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 text-slate-400 hover:text-cyan-300">
-                            <InstagramIcon className="w-5 h-5" />
-                            xvikasingh17
-                        </a>
+                        <a href="https://www.instagram.com/xvikasingh17" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 text-slate-400 hover:text-cyan-300"><InstagramIcon className="w-5 h-5" />xvikasingh17</a>
                     </div>
-                     <div className="text-center fade-in-up">
+                    <div className="text-center fade-in-up">
                         <p className="text-lg text-slate-300">Gautam Jaiswani</p>
                         <p className="font-mono text-cyan-400 mt-1">+91 9131510118</p>
-                        <a href="https://www.instagram.com/gautamjaiswani_" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 text-slate-400 hover:text-cyan-300">
-                            <InstagramIcon className="w-5 h-5" />
-                            gautamjaiswani_
-                        </a>
+                        <a href="https://www.instagram.com/gautamjaiswani_" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-2 text-slate-400 hover:text-cyan-300"><InstagramIcon className="w-5 h-5" />gautamjaiswani_</a>
                     </div>
                 </div>
             </div>
@@ -197,12 +160,12 @@ const HomePage = ({ setPage }) => {
 const MemberInput = ({ memberNumber, data, onChange }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5 border-t border-slate-700 pt-5 mt-5">
         <h3 className="md:col-span-2 text-lg font-semibold text-cyan-400">Member {memberNumber}</h3>
-        <input name="name" value={data.name} onChange={onChange} type="text" placeholder="Member Name" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="year" value={data.year} onChange={onChange} type="text" placeholder="Year" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="branch" value={data.branch} onChange={onChange} type="text" placeholder="Branch" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="name" value={data.name} onChange={onChange} type="text" placeholder="Member Name" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="year" value={data.year} onChange={onChange} type="text" placeholder="Year" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="branch" value={data.branch} onChange={onChange} type="text" placeholder="Branch" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
         <input name="githubLink" value={data.githubLink} onChange={onChange} type="url" placeholder="GitHub Link (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="contactNumber" value={data.contactNumber} onChange={onChange} type="tel" placeholder="Contact Number" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="instagram" value={data.instagram} onChange={onChange} type="text" placeholder="Instagram Username" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="contactNumber" value={data.contactNumber} onChange={onChange} type="tel" placeholder="Contact Number" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="instagram" value={data.instagram} onChange={onChange} type="text" placeholder="Instagram Username" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
         <div className="md:col-span-2 space-y-2">
             <label className="text-slate-300">Skills</label>
             <SkillsSelector selectedSkills={data.skills} onSkillsChange={(skills) => onChange({ target: { name: 'skills', value: skills } })} />
@@ -211,66 +174,50 @@ const MemberInput = ({ memberNumber, data, onChange }) => (
     </div>
 );
 
-
 const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
     const initialMemberState = { name: '', year: '', branch: '', githubLink: '', skills: [], contactNumber: '', instagram: '', otherSkills: '' };
     const [formData, setFormData] = useState({
         teamName: '',
-        leader: { name: '', year: '', branch: '', githubLink: '', contactNumber: '' },
+        leader: { name: '', year: '1st Year', branch: 'CSE', githubLink: '', contactNumber: '' },
         members: Array(5).fill(null).map(() => ({...initialMemberState})),
         leaderContact: { discord: '' },
         problemStatement: ''
     });
+    const [loading, setLoading] = useState(false);
 
-    const handleLeaderChange = (e) => {
-        setFormData(prev => ({ ...prev, leader: { ...prev.leader, [e.target.name]: e.target.value } }));
-    };
-
+    const handleLeaderChange = (e) => setFormData(prev => ({ ...prev, leader: { ...prev.leader, [e.target.name]: e.target.value } }));
     const handleMemberChange = (index, e) => {
         const { name, value } = e.target;
         const updatedMembers = [...formData.members];
-        const field = updatedMembers[index];
-        field[name] = value;
+        updatedMembers[index][name] = value;
         setFormData(prev => ({ ...prev, members: updatedMembers }));
     };
-    
-    const handleContactChange = (e) => {
-         setFormData(prev => ({ ...prev, leaderContact: { ...prev.leaderContact, [e.target.name]: e.target.value } }));
-    };
+    const handleContactChange = (e) => setFormData(prev => ({ ...prev, leaderContact: { ...prev.leaderContact, [e.target.name]: e.target.value } }));
 
     const registerTeam = async (teamData) => {
+        setLoading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/register/team', {
+            const response = await fetch('/api/register/team', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(teamData),
             });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const newTeam = await response.json();
-            setTeams(prev => [...prev, newTeam]);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Registration failed');
+            setTeams(prev => [...prev, result]);
             showToast('Team registration successful!');
-
-            // Trigger confetti
-            if (window.confetti) {
-                window.confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
-            }
-
-            // Redirect after a delay
-            setTimeout(() => {
-                setPage('registered');
-            }, 2000);
-
-            return true;
+            if (window.confetti) window.confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+            setTimeout(() => setPage('registered'), 2000);
         } catch (error) {
             console.error("Failed to register team:", error);
-            showAlert('Failed to register team. Please try again later.');
-            return false;
+            showAlert(error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Basic Validation
         if (!formData.teamName || !formData.leader.name || !formData.leader.contactNumber) {
             showAlert("Please fill in all required fields for the team and leader.");
             return;
@@ -284,8 +231,7 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
             <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Team Registration Form</h2>
             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6">
                 <input type="text" value={formData.teamName} onChange={(e) => setFormData({...formData, teamName: e.target.value})} placeholder="Team Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition text-xl" />
-                 <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({...formData, problemStatement: e.target.value})} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                
+                <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({...formData, problemStatement: e.target.value})} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700 pt-5">
                     <h3 className="md:col-span-2 text-xl font-semibold text-cyan-400 border-b border-slate-700 pb-2">Team Leader</h3>
                     <input name="name" value={formData.leader.name} onChange={handleLeaderChange} type="text" placeholder="Leader's Name" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
@@ -295,21 +241,22 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
                     <input name="contactNumber" value={formData.leader.contactNumber} onChange={handleLeaderChange} type="tel" placeholder="Leader Contact Number" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                     <input name="discord" value={formData.leaderContact.discord} onChange={handleContactChange} type="text" placeholder="Leader Discord ID (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 </div>
-
                 {formData.members.map((member, i) => <MemberInput key={i} memberNumber={i + 1} data={member} onChange={(e) => handleMemberChange(i, e)} />)}
-                
-                <button type="submit" className="w-full py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Submit Team Registration</button>
+                <button type="submit" disabled={loading} className="w-full py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed">
+                    {loading ? 'Submitting...' : 'Submit Team Registration'}
+                </button>
             </form>
         </div>
     );
 };
 
-const IndividualRegistration = ({ setIndividuals, showToast, showAlert }) => {
+const IndividualRegistration = ({ setPage, setIndividuals, showToast, showAlert }) => {
     const [formData, setFormData] = useState({
-        name: '', year: '', branch: '', skills: [],
+        name: '', year: '1st Year', branch: 'BCA_AIDA', skills: [],
         contactNumber: '', github: '', discord: '', instagram: '', otherSkills: '',
         hasDeployed: false, productLink: ''
     });
+    const [loading, setLoading] = useState(false);
     
     const showDeployedCheckbox = formData.skills.some(s => DEV_SKILLS.includes(s));
 
@@ -318,34 +265,34 @@ const IndividualRegistration = ({ setIndividuals, showToast, showAlert }) => {
         setFormData(prev => ({...prev, [name]: type === 'checkbox' ? checked : value}));
     };
     
-    const handleSkillsChange = (skills) => {
-        setFormData(prev => ({...prev, skills}));
-    };
+    const handleSkillsChange = (skills) => setFormData(prev => ({...prev, skills}));
 
     const registerIndividual = async (individualData) => {
+        setLoading(true);
         try {
-            const response = await fetch('http://localhost:8000/api/register/individual', {
+            const response = await fetch('/api/register/individual', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(individualData),
             });
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const newIndividual = await response.json();
-            setIndividuals(prev => [...prev, newIndividual]);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Registration failed');
+            setIndividuals(prev => [...prev, result]);
             showToast('Individual registration successful!');
-            return true;
+            if (window.confetti) window.confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+            setTimeout(() => setPage('registered'), 2000);
         } catch (error) {
             console.error("Failed to register individual:", error);
-            showAlert('Failed to register. Please try again later.');
-            return false;
+            showAlert(error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Basic Validation
-        if (!formData.name || !formData.contactNumber || !formData.instagram) {
-            showAlert("Please fill in your name, contact number, and Instagram username.");
+        if (!formData.name || !formData.contactNumber || !formData.instagram || !formData.year || !formData.branch) {
+            showAlert("Please fill in all required fields.");
             return;
         }
         registerIndividual(formData);
@@ -357,14 +304,18 @@ const IndividualRegistration = ({ setIndividuals, showToast, showAlert }) => {
             <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6">
                 <input name="name" value={formData.name} onChange={handleChange} type="text" placeholder="Full Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input name="year" value={formData.year} onChange={handleChange} type="text" placeholder="Year" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="branch" value={formData.branch} onChange={handleChange} type="text" placeholder="Branch" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+                    <select name="year" value={formData.year} onChange={handleChange} required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition">
+                        <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
+                    </select>
+                    <select name="branch" value={formData.branch} onChange={handleChange} required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition">
+                        <option>BCA_AIDA</option><option>BCA</option><option>MCA_AIML</option><option>MCA</option><option>CSE</option><option>Other BRANCH</option>
+                    </select>
                 </div>
                 <div className="space-y-2">
                     <label className="text-slate-300">Your Skills</label>
                     <SkillsSelector selectedSkills={formData.skills} onSkillsChange={handleSkillsChange} />
                 </div>
-                 <input name="otherSkills" value={formData.otherSkills} onChange={handleChange} type="text" placeholder="Other skills (comma-separated)" className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+                <input name="otherSkills" value={formData.otherSkills} onChange={handleChange} type="text" placeholder="Other skills (comma-separated)" className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input name="contactNumber" value={formData.contactNumber} onChange={handleChange} type="tel" placeholder="Contact Number" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                     <input name="instagram" value={formData.instagram} onChange={handleChange} type="text" placeholder="Instagram Username" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
@@ -373,51 +324,27 @@ const IndividualRegistration = ({ setIndividuals, showToast, showAlert }) => {
                     <input name="github" value={formData.github} onChange={handleChange} type="url" placeholder="GitHub Link (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                     <input name="discord" value={formData.discord} onChange={handleChange} type="text" placeholder="Discord ID (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 </div>
-
                 {showDeployedCheckbox && (
                     <div className="space-y-4 pt-4 border-t border-slate-700">
                         <label className="flex items-center space-x-3 text-lg cursor-pointer">
-                            <input name="hasDeployed" checked={formData.hasDeployed} onChange={handleChange} type="checkbox" required className="w-5 h-5 bg-slate-600 border-slate-500 rounded text-cyan-500 focus:ring-cyan-600" />
+                            <input name="hasDeployed" checked={formData.hasDeployed} onChange={handleChange} type="checkbox" className="w-5 h-5 bg-slate-600 border-slate-500 rounded text-cyan-500 focus:ring-cyan-600" />
                             <span>Have you ever deployed a real software product?</span>
                         </label>
-                        {formData.hasDeployed && <input name="productLink" value={formData.productLink} onChange={handleChange} type="url" placeholder="Link to product (Optional)" className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />}
+                        {formData.hasDeployed && <input name="productLink" value={formData.productLink} onChange={handleChange} type="url" placeholder="Link to product (Optional)" required={formData.hasDeployed} className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />}
                     </div>
                 )}
-                <button type="submit" className="w-full py-4 text-xl bg-gradient-to-br from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Submit Application</button>
+                <button type="submit" disabled={loading} className="w-full py-4 text-xl bg-gradient-to-br from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed">
+                    {loading ? 'Submitting...' : 'Submit Application'}
+                </button>
             </form>
         </div>
     );
 };
 
-const RegisteredPage = () => {
+const RegisteredPage = ({ teams, individuals }) => {
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [contactInfo, setContactInfo] = useState(null);
-    const [teams, setTeams] = useState([]);
-    const [individuals, setIndividuals] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchAllData = async () => {
-            setLoading(true);
-            try {
-                const [teamsRes, individualsRes] = await Promise.all([
-                    fetch('http://localhost:8000/api/teams'),
-                    fetch('http://localhost:8000/api/individuals')
-                ]);
-                if (!teamsRes.ok || !individualsRes.ok) throw new Error('Network response was not ok');
-                const teamsData = await teamsRes.json();
-                const individualsData = await individualsRes.json();
-                setTeams(teamsData);
-                setIndividuals(individualsData);
-            } catch (error) {
-                console.error("Failed to fetch registered participants:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAllData();
-    }, []);
-
+    
     const handleContactClick = (individual) => {
         if (individual.discord || individual.instagram || individual.contactNumber) {
             setContactInfo(individual);
@@ -434,48 +361,39 @@ const RegisteredPage = () => {
     return (
         <div className="flex-grow p-4 md:p-8 text-white">
             <h2 className="text-4xl font-bold text-center mb-10 text-cyan-300">Registered Participants</h2>
-            
-            {loading ? (
-                <div className="text-center text-slate-400 py-10">Loading participants...</div>
-            ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                    {/* Teams Panel */}
-                    <div className="panel">
-                        <h3 className="text-3xl font-bold mb-6 text-center text-cyan-400">Teams</h3>
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                            {teams.length > 0 ? teams.map(team => (
-                                <div key={team._id} onClick={() => setSelectedTeam(team)} className="bg-slate-800/50 border border-slate-700 rounded-lg p-5 cursor-pointer transition-all duration-300 hover:bg-slate-800 hover:border-cyan-500 hover:shadow-cyan-500/10 hover:shadow-lg transform hover:-translate-y-1">
-                                    <h4 className="text-xl font-bold text-cyan-300">{team.teamName}</h4>
-                                    <p className="text-slate-300">Leader: {team.leader.name}</p>
-                                    <p className="text-sm text-slate-400 mt-1">{team.members.length} member{team.members.length !== 1 && 's'}</p>
-                                </div>
-                            )) : <p className="text-center text-slate-500 py-8">No teams have registered yet.</p>}
-                        </div>
-                    </div>
-
-                    {/* Individuals Panel */}
-                    <div className="panel">
-                        <h3 className="text-3xl font-bold mb-6 text-center text-teal-300">Individuals Seeking Teams</h3>
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                            {individuals.length > 0 ? individuals.map(ind => (
-                                <div key={ind._id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-                                    <h4 className="text-xl font-bold text-teal-200">{ind.name}</h4>
-                                    <p className="text-slate-300">{ind.branch} - {ind.year} Year</p>
-                                    <div className="flex flex-wrap gap-2 my-3">
-                                        {[...ind.skills, ...(ind.otherSkills ? ind.otherSkills.split(',').map(s=>s.trim()) : [])].slice(0, 5).map(skill => (
-                                            <span key={skill} className="bg-slate-700 text-cyan-200 text-xs font-medium px-2.5 py-1 rounded-full">{skill}</span>
-                                        ))}
-                                    </div>
-                                    <div className="border-t border-slate-700 pt-3 mt-3 flex justify-end">
-                                         <button onClick={() => handleContactClick(ind)} className="bg-teal-600 hover:bg-teal-500 px-5 py-2 rounded-lg font-semibold transition-transform transform hover:scale-105 text-sm">View Contact</button>
-                                    </div>
-                                </div>
-                            )) : <p className="text-center text-slate-500 py-8">No individuals have registered yet.</p>}
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                <div className="panel">
+                    <h3 className="text-3xl font-bold mb-6 text-center text-cyan-400">Teams ({teams.length})</h3>
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                        {teams.length > 0 ? teams.map(team => (
+                            <div key={team._id} onClick={() => setSelectedTeam(team)} className="bg-slate-800/50 border border-slate-700 rounded-lg p-5 cursor-pointer transition-all duration-300 hover:bg-slate-800 hover:border-cyan-500 hover:shadow-cyan-500/10 hover:shadow-lg transform hover:-translate-y-1">
+                                <h4 className="text-xl font-bold text-cyan-300">{team.teamName}</h4>
+                                <p className="text-slate-300">Leader: {team.leader.name}</p>
+                                <p className="text-sm text-slate-400 mt-1">{team.members.filter(m => m.name).length} member{team.members.filter(m => m.name).length !== 1 && 's'}</p>
+                            </div>
+                        )) : <p className="text-center text-slate-500 py-8">No teams have registered yet.</p>}
                     </div>
                 </div>
-            )}
-            
+                <div className="panel">
+                    <h3 className="text-3xl font-bold mb-6 text-center text-teal-300">Individuals ({individuals.length})</h3>
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                        {individuals.length > 0 ? individuals.map(ind => (
+                            <div key={ind._id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
+                                <h4 className="text-xl font-bold text-teal-200">{ind.name}</h4>
+                                <p className="text-slate-300">{ind.branch} - {ind.year}</p>
+                                <div className="flex flex-wrap gap-2 my-3">
+                                    {[...ind.skills, ...(ind.otherSkills ? ind.otherSkills.split(',').map(s=>s.trim()) : [])].slice(0, 5).map(skill => (
+                                        <span key={skill} className="bg-slate-700 text-cyan-200 text-xs font-medium px-2.5 py-1 rounded-full">{skill}</span>
+                                    ))}
+                                </div>
+                                <div className="border-t border-slate-700 pt-3 mt-3 flex justify-end">
+                                     <button onClick={() => handleContactClick(ind)} className="bg-teal-600 hover:bg-teal-500 px-5 py-2 rounded-lg font-semibold transition-transform transform hover:scale-105 text-sm">View Contact</button>
+                                </div>
+                            </div>
+                        )) : <p className="text-center text-slate-500 py-8">No individuals have registered yet.</p>}
+                    </div>
+                </div>
+            </div>
             <TeamDetailsModal team={selectedTeam} onClose={closeModal} />
             <ContactModal individual={contactInfo} onClose={closeModal} />
         </div>
@@ -486,7 +404,6 @@ const RegisteredPage = () => {
 
 const TeamDetailsModal = ({ team, onClose }) => {
     if (!team) return null;
-
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-2xl w-full text-left max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -497,16 +414,16 @@ const TeamDetailsModal = ({ team, onClose }) => {
                 <div className="p-6 md:p-8 space-y-6">
                     <div>
                         <h3 className="text-xl font-semibold text-cyan-400 mb-3 border-b border-slate-700 pb-2">Team Leader</h3>
-                        <p><strong>{team.leader.name}</strong> ({team.leader.branch} - {team.leader.year} Year)</p>
+                        <p><strong>{team.leader.name}</strong> ({team.leader.branch} - {team.leader.year})</p>
                         <p className="text-sm text-slate-400">Contact: {team.leader.contactNumber}</p>
                     </div>
-                    {team.members.length > 0 && (
+                    {team.members.filter(m => m.name).length > 0 && (
                         <div>
                             <h3 className="text-xl font-semibold text-cyan-400 mb-3 border-b border-slate-700 pb-2">Members</h3>
                             <div className="space-y-4">
-                                {team.members.map((member, index) => (
+                                {team.members.filter(m => m.name).map((member, index) => (
                                     <div key={index} className="bg-slate-700/50 p-4 rounded-lg">
-                                        <p><strong>{member.name}</strong> ({member.branch} - {member.year} Year)</p>
+                                        <p><strong>{member.name}</strong> ({member.branch} - {member.year})</p>
                                         <p className="text-sm text-slate-400">Contact: {member.contactNumber} / Insta: @{member.instagram}</p>
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {[...member.skills, ...(member.otherSkills ? member.otherSkills.split(',').map(s=>s.trim()) : [])].map(skill => (
@@ -529,24 +446,17 @@ const TeamDetailsModal = ({ team, onClose }) => {
 
 const ContactModal = ({ individual, onClose }) => {
     if (!individual) return null;
-
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-slate-800 border border-slate-700 p-8 rounded-xl shadow-2xl w-full max-w-sm text-center" onClick={e => e.stopPropagation()}>
                 {individual.unavailable ? (
-                    <>
-                        <h3 className="text-2xl font-bold text-orange-400 mb-4">Contact Info Private</h3>
-                        <p className="text-lg">{individual.name} has not provided public contact details.</p>
-                    </>
+                    <><h3 className="text-2xl font-bold text-orange-400 mb-4">Contact Info Private</h3><p className="text-lg">{individual.name} has not provided public contact details.</p></>
                 ) : (
-                    <>
-                        <h3 className="text-2xl font-bold text-cyan-300 mb-6">Contact {individual.name}</h3>
-                        <div className="space-y-3 text-left">
-                            {individual.contactNumber && <p className="text-lg">📞 <span className="font-mono">{individual.contactNumber}</span></p>}
-                            {individual.instagram && <p className="text-lg">📷 <span className="font-mono">@{individual.instagram}</span></p>}
-                            {individual.discord && <p className="text-lg">💬 <span className="font-mono">{individual.discord}</span></p>}
-                        </div>
-                    </>
+                    <><h3 className="text-2xl font-bold text-cyan-300 mb-6">Contact {individual.name}</h3><div className="space-y-3 text-left">
+                        {individual.contactNumber && <p className="text-lg">📞 <span className="font-mono">{individual.contactNumber}</span></p>}
+                        {individual.instagram && <p className="text-lg">📷 <span className="font-mono">@{individual.instagram}</span></p>}
+                        {individual.discord && <p className="text-lg">💬 <span className="font-mono">{individual.discord}</span></p>}
+                    </div></>
                 )}
                 <button onClick={onClose} className="mt-8 bg-slate-600 hover:bg-slate-500 px-8 py-2 rounded-lg font-semibold">Close</button>
             </div>
@@ -567,7 +477,6 @@ const AlertModal = ({ message, show, onClose }) => {
     );
 };
 
-
 export default function App() {
   const [page, setPage] = useState('home');
   const [teams, setTeams] = useState([]);
@@ -575,6 +484,30 @@ export default function App() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [alert, setAlert] = useState({ show: false, message: '' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        const [teamsRes, individualsRes] = await Promise.all([
+          fetch('/api/teams'),
+          fetch('/api/individuals')
+        ]);
+        if (!teamsRes.ok || !individualsRes.ok) throw new Error('Network response was not ok');
+        const teamsData = await teamsRes.json();
+        const individualsData = await individualsRes.json();
+        setTeams(teamsData);
+        setIndividuals(individualsData);
+      } catch (error) {
+        console.error("Failed to fetch registered participants:", error);
+        showAlert("Could not load participant data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAllData();
+  }, []);
 
   const showToast = (message) => {
     setToast({ show: true, message });
@@ -590,10 +523,14 @@ export default function App() {
   }
 
   const renderPage = () => {
+    if (isLoading && page === 'registered') {
+        return <div className="text-center text-slate-400 py-10 flex-grow">Loading participants...</div>;
+    }
+
     switch (page) {
       case 'team': return <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} />;
-      case 'individual': return <IndividualRegistration setIndividuals={setIndividuals} showToast={showToast} showAlert={showAlert} />;
-      case 'registered': return <RegisteredPage />;
+      case 'individual': return <IndividualRegistration setPage={setPage} setIndividuals={setIndividuals} showToast={showToast} showAlert={showAlert} />;
+      case 'registered': return <RegisteredPage teams={teams} individuals={individuals} />;
       default: return <HomePage setPage={setPage} />;
     }
   };
@@ -608,23 +545,17 @@ export default function App() {
             <div className="container mx-auto flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     {page !== 'home' && (
-                        <button onClick={() => setPage('home')} className="text-white p-1 rounded-full hover:bg-slate-700">
-                            <BackArrowIcon className="w-6 h-6"/>
-                        </button>
+                        <button onClick={() => setPage('home')} className="text-white p-1 rounded-full hover:bg-slate-700"><BackArrowIcon className="w-6 h-6"/></button>
                     )}
-                    <div onClick={() => setPage('home')} className="text-2xl font-bold text-white cursor-pointer">
-                        SIH <span className="text-cyan-400">LNCTU</span>
-                    </div>
+                    <div onClick={() => setPage('home')} className="text-2xl font-bold text-white cursor-pointer">SIH <span className="text-cyan-400">LNCTU</span></div>
                 </div>
                 
-                {/* Desktop Nav */}
                 <div className="hidden md:flex space-x-2">
                     {['home', 'team', 'individual', 'registered'].map(p => (
                         <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'team' ? 'Teams' : p === 'individual' ? 'Individuals' : p === 'registered' ? 'Registered' : 'Home'}</button>
                     ))}
                 </div>
 
-                {/* Mobile Nav Button */}
                 <div className="md:hidden">
                     <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -635,37 +566,15 @@ export default function App() {
             </div>
         </nav>
         
-        {/* Mobile Menu */}
-     {/* Mobile Menu */}
-<div
-  className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${
-    isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-  } md:hidden`}
->
-  <div className="flex flex-col items-center justify-center h-full space-y-8">
-    {['home', 'team', 'individual', 'registered'].map(p => (
-      <button
-        key={p}
-        onClick={() => {
-          handleNav(p)
-          setIsMenuOpen(false) // close menu after click
-        }}
-        className={`text-3xl capitalize font-bold transition-colors ${
-          page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'
-        }`}
-      >
-        {p === 'team'
-          ? 'Teams'
-          : p === 'individual'
-          ? 'Individuals'
-          : p === 'registered'
-          ? 'Registered'
-          : 'Home'}
-      </button>
-    ))}
-  </div>
-</div>
-
+        <div className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
+            <div className="flex flex-col items-center justify-center h-full space-y-8">
+                {['home', 'team', 'individual', 'registered'].map(p => (
+                    <button key={p} onClick={() => { handleNav(p); setIsMenuOpen(false); }} className={`text-3xl capitalize font-bold transition-colors ${page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'}`}>
+                        {p === 'team' ? 'Teams' : p === 'individual' ? 'Individuals' : p === 'registered' ? 'Registered' : 'Home'}
+                    </button>
+                ))}
+            </div>
+        </div>
         
         <main className="container mx-auto flex-grow flex flex-col z-10">{renderPage()}</main>
 
@@ -680,59 +589,25 @@ export default function App() {
         )}
 
         <style>{`
-            .bg-grid-slate-800 {
-                background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-                                  linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-                background-size: 2rem 2rem;
-            }
-            .animate-pulse-slow {
-                animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            }
-            .animation-delay-4000 {
-                animation-delay: 4s;
-            }
-            @keyframes pulse {
-                50% {
-                    opacity: .5;
-                }
-            }
-            /* Custom scrollbar for panels */
-            .panel .overflow-y-auto::-webkit-scrollbar {
-                width: 6px;
-            }
-            .panel .overflow-y-auto::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .panel .overflow-y-auto::-webkit-scrollbar-thumb {
-                background-color: rgba(134, 239, 172, 0.3); /* a teal color */
-                border-radius: 20px;
-                border: 3px solid transparent;
-            }
-            .panel .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-                 background-color: rgba(134, 239, 172, 0.5);
-            }
-            
-            /* Infinite Scroller Animation */
-            @keyframes scroll-x {
-                from { transform: translateX(0); }
-                to { transform: translateX(-50%); }
-            }
-            .animate-scroll-x {
-                animation: scroll-x 40s linear infinite;
-            }
-            .group:hover .animate-scroll-x {
-                animation-play-state: paused;
-            }
+            .bg-grid-slate-800 { background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px); background-size: 2rem 2rem; }
+            .animate-pulse-slow { animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+            .animation-delay-4000 { animation-delay: 4s; }
+            @keyframes pulse { 50% { opacity: .5; } }
+            .panel .overflow-y-auto::-webkit-scrollbar { width: 6px; }
+            .panel .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
+            .panel .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(134, 239, 172, 0.3); border-radius: 20px; border: 3px solid transparent; }
+            .panel .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(134, 239, 172, 0.5); }
+            @keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+            .animate-scroll-x { animation: scroll-x 10s linear infinite; }
+            .group:hover .animate-scroll-x { animation-play-state: paused; }
         `}</style>
-         <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     </div>
   );
 }
 
 const Footer = () => (
   <footer className="text-center py-6 bg-transparent text-slate-400 mt-auto z-10">
-    <p>Developed by Gautam Jaiswani</p>
+    <p>Developed by Gautam Jaiswani & Vikas Singh</p>
   </footer>
 );
 
