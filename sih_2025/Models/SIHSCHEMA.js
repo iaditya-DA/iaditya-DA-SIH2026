@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 // --- Schema for Individual Registrations ---
@@ -27,7 +27,7 @@ const MemberSchema = new Schema({
     githubLink: { type: String },
     skills: { type: [String], default: [] },
     otherSkills: { type: String }
-}, { _id: false }); // Prevents extra _id for each member
+}, { _id: false });
 
 // --- Schema for Team Registrations ---
 const TeamSchema = new Schema({
@@ -58,8 +58,8 @@ const TeamSchema = new Schema({
     registeredAt: { type: Date, default: Date.now }
 });
 
-// ✅ Fix for Vercel Serverless (avoid OverwriteModelError)
+// Fix for Vercel Serverless (avoid OverwriteModelError)
 const Individual = mongoose.models.Individual || mongoose.model('Individual', IndividualSchema);
 const Team = mongoose.models.Team || mongoose.model('Team', TeamSchema);
 
-module.exports = { Individual, Team };
+export { Individual, Team };

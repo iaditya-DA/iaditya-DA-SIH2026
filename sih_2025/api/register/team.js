@@ -1,8 +1,7 @@
-// api/register/team.js
-const connectDB = require('../../lib/mongo');
-const { Team } = require('../../../Models/SIHSCHEMA');
+import connectDB from '../../lib/mongo.js';
+import { Team } from '../../Models/SIHSCHEMA.js';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }

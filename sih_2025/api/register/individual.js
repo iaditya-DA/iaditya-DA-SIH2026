@@ -1,8 +1,8 @@
 // api/register/individual.js
-const connectDB = require('../../lib/mongo');
-const { Individual } = require('../../../Models/SIHSCHEMA');
+import connectDB from '../../lib/mongo.js';
+import { Individual } from '../../Models/SIHSCHEMA';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }

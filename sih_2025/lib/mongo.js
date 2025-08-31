@@ -1,5 +1,5 @@
 // lib/mongo.js
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const MONGO_URI = 'mongodb+srv://Gautam:jaiswani@imcoolthanyou.ovv6hm0.mongodb.net/?retryWrites=true&w=majority&appName=imcoolthanyou';
 
