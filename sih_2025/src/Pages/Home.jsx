@@ -5,6 +5,47 @@ import React, { useState, useEffect, useRef } from 'react';
 const SKILLS_LIST = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Development', 'UI/UX Design', 'Project Management', 'Communication', 'Presentation', 'Cloud Computing', 'Cybersecurity', 'Blockchain'];
 const DEV_SKILLS = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Development', 'Cloud Computing', 'Cybersecurity', 'Blockchain'];
 
+// Announcement Banner Component
+const AnnouncementBanner = () => {
+    return (
+        <div className="relative bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 py-3 overflow-hidden border-b border-red-500/30">
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="relative">
+                <div className="flex animate-marquee whitespace-nowrap">
+                    <div className="mx-4 flex items-center space-x-8">
+                        <span className="text-white font-bold text-lg flex items-center">
+                            🚨 IMPORTANT NOTICE:
+                        </span>
+                        <span className="text-white font-semibold">
+                            Individual registrations are now CLOSED ❌
+                        </span>
+                        <span className="text-white font-semibold">
+                            Team registration deadline: 12th September 2025, 1:00 PM ⏰
+                        </span>
+                        <span className="text-white font-bold">
+                            Register your team NOW before it's too late! 🔥
+                        </span>
+                    </div>
+                    <div className="mx-4 flex items-center space-x-8">
+                        <span className="text-white font-bold text-lg flex items-center">
+                            🚨 IMPORTANT NOTICE:
+                        </span>
+                        <span className="text-white font-semibold">
+                            Individual registrations are now CLOSED ❌
+                        </span>
+                        <span className="text-white font-semibold">
+                            Team registration deadline: 12th September 2025, 1:00 PM ⏰
+                        </span>
+                        <span className="text-white font-bold">
+                            Register your team NOW before it's too late! 🔥
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const InstagramIcon = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
@@ -98,15 +139,23 @@ const HomePage = ({ setPage }) => {
 
     return (
         <div className="flex-grow text-white">
+            <AnnouncementBanner />
             <div className="text-center px-4 pt-12 pb-20">
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tight title-animate bg-clip-text text-transparent bg-gradient-to-br from-white to-cyan-400">SIH 2025 Registration</h1>
                 <p className="text-xl md:text-2xl mt-4 text-cyan-200/80 subtitle-animate">LNCT University Bhopal</p>
                 <div className="home-content-animate my-10 max-w-3xl mx-auto bg-slate-800/30 p-8 rounded-2xl backdrop-blur-sm border border-slate-700/50">
                     <h2 className="text-3xl font-bold text-cyan-300 mb-4">Join the Innovation Wave</h2>
+                    <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-red-300 font-semibold">⚠️ Individual Registration Closed</p>
+                        <p className="text-red-200 text-sm mt-1">Team registration closes on 12th September 2025 at 1:00 PM</p>
+                    </div>
                 </div>
                 <div className="space-y-4 md:space-y-0 md:space-x-6 flex flex-col md:flex-row justify-center">
                     <button onClick={() => setPage('team')} className="home-button px-10 py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Register a Team</button>
-                    <button onClick={() => setPage('individual')} className="home-button px-10 py-4 text-xl bg-gradient-to-br from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Register as an Individual</button>
+                    <button disabled className="home-button px-10 py-4 text-xl bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg font-bold transition-all duration-300 cursor-not-allowed opacity-60 relative">
+                        <span className="line-through">Register as an Individual</span>
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">CLOSED</span>
+                    </button>
                     <button onClick={() => setPage('registered')} className="home-button px-10 py-4 text-xl bg-slate-700 hover:bg-slate-600 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">View Registered Participants</button>
                 </div>
             </div>
@@ -227,8 +276,18 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
     };
     
     return (
-        <div className="flex-grow p-4 md:p-8 text-white">
-            <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Team Registration Form</h2>
+        <div className="flex-grow text-white">
+            <AnnouncementBanner />
+            <div className="p-4 md:p-8">
+                <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Team Registration Form</h2>
+                <div className="max-w-4xl mx-auto mb-6 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-yellow-400 text-xl">⏰</span>
+                        <p className="text-yellow-300 font-bold text-lg">Registration Deadline Alert!</p>
+                    </div>
+                    <p className="text-yellow-200">Team registrations close on <strong>12th September 2025 at 1:00 PM</strong>. Don't miss out!</p>
+                    <p className="text-yellow-200 text-sm mt-1">Individual registrations are now permanently closed.</p>
+                </div>
             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6">
                 <input type="text" value={formData.teamName} onChange={(e) => setFormData({...formData, teamName: e.target.value})} placeholder="Team Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition text-xl" />
                 <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({...formData, problemStatement: e.target.value})} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
@@ -246,6 +305,7 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
                     {loading ? 'Submitting...' : 'Submit Team Registration'}
                 </button>
             </form>
+            </div>
         </div>
     );
 };
@@ -529,7 +589,11 @@ export default function App() {
 
     switch (page) {
       case 'team': return <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} />;
-      case 'individual': return <IndividualRegistration setPage={setPage} setIndividuals={setIndividuals} showToast={showToast} showAlert={showAlert} />;
+      case 'individual': 
+        // Individual registration is now closed, redirect to home
+        setPage('home');
+        showAlert('Individual registration has been closed. Only team registrations are accepted now.');
+        return <HomePage setPage={setPage} />;
       case 'registered': return <RegisteredPage teams={teams} individuals={individuals} />;
       default: return <HomePage setPage={setPage} />;
     }
@@ -551,9 +615,13 @@ export default function App() {
                 </div>
                 
                 <div className="hidden md:flex space-x-2">
-                    {['home', 'team', 'individual', 'registered'].map(p => (
-                        <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'team' ? 'Teams' : p === 'individual' ? 'Individuals' : p === 'registered' ? 'Registered' : 'Home'}</button>
+                    {['home', 'team', 'registered'].map(p => (
+                        <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'team' ? 'Teams' : p === 'registered' ? 'Registered' : 'Home'}</button>
                     ))}
+                    <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                        Individuals
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
+                    </button>
                 </div>
 
                 <div className="md:hidden">
@@ -568,11 +636,15 @@ export default function App() {
         
         <div className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
             <div className="flex flex-col items-center justify-center h-full space-y-8">
-                {['home', 'team', 'individual', 'registered'].map(p => (
+                {['home', 'team', 'registered'].map(p => (
                     <button key={p} onClick={() => { handleNav(p); setIsMenuOpen(false); }} className={`text-3xl capitalize font-bold transition-colors ${page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'}`}>
-                        {p === 'team' ? 'Teams' : p === 'individual' ? 'Individuals' : p === 'registered' ? 'Registered' : 'Home'}
+                        {p === 'team' ? 'Teams' : p === 'registered' ? 'Registered' : 'Home'}
                     </button>
                 ))}
+                <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
+                    Individuals
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
+                </div>
             </div>
         </div>
         
@@ -600,6 +672,8 @@ export default function App() {
             @keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
             .animate-scroll-x { animation: scroll-x 40s linear infinite; }
             .group:hover .animate-scroll-x { animation-play-state: paused; }
+            @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+            .animate-marquee { animation: marquee 20s linear infinite; }
         `}</style>
     </div>
   );

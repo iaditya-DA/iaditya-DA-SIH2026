@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "dev:backend": "npm start --prefix Backend",
+    "dev:backend": "node dev-server.js",
+    "dev:old-backend": "npm start --prefix Backend",
     "tailwind:init": "npx tailwindcss init -p",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

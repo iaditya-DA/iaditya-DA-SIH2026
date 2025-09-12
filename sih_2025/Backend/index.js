@@ -5,7 +5,7 @@ const cors = require('cors');
 
 // Import the Mongoose models from your schemas.js file
 // Make sure this file is in the same directory as your server.js
-const { Individual, Team } = require('../api/Models/SIHSCHEMA.js'); 
+const { Individual, Team } = require('../api/Models/SIHSCHEMA.cjs');
 
 // --- Basic Setup ---
 const app = express();
@@ -21,8 +21,66 @@ app.use(express.json());
 // IMPORTANT: Replace this with your actual MongoDB connection string from your cluster
 const MONGO_URI = 'mongodb+srv://Gautam:jaiswani@imcoolthanyou.ovv6hm0.mongodb.net/?retryWrites=true&w=majority&appName=imcoolthanyou';
 
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('Successfully connected to MongoDB.'))
+mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+})
+    .then(async () => {
+        console.log('Successfully connected to MongoDB.');
+        
+        // Check if we need to create some sample data
+        try {
+            const individualsCount = await Individual.countDocuments();
+            const teamsCount = await Team.countDocuments();
+            
+            if (individualsCount === 0) {
+                console.log('Creating sample individual data...');
+                await Individual.create({
+                    name: "Sample Individual",
+                    year: "3rd Year",
+                    branch: "Computer Science",
+                    skills: ["JavaScript", "React"],
+                    contactNumber: "1234567890",
+                    instagram: "@sample_user",
+                    github: "github.com/sampleuser",
+                    hasDeployed: true
+                });
+            }
+            
+            if (teamsCount === 0) {
+                console.log('Creating sample team data...');
+                await Team.create({
+                    teamName: "Sample Team",
+                    problemStatement: "Sample problem statement",
+                    leader: {
+                        name: "Team Leader",
+                        year: "4th Year",
+                        branch: "Computer Science",
+                        contactNumber: "0987654321",
+                        githubLink: "github.com/teamleader"
+                    },
+                    leaderContact: {
+                        phone: "0987654321",
+                        discord: "teamleader#1234"
+                    },
+                    members: [
+                        {
+                            name: "Member 1",
+                            year: "3rd Year",
+                            branch: "Computer Science",
+                            contactNumber: "1111111111",
+                            instagram: "@member1",
+                            skills: ["Python", "Django"]
+                        }
+                    ]
+                });
+            }
+            
+            console.log(`Database initialized - Individuals: ${individualsCount}, Teams: ${teamsCount}`);
+        } catch (error) {
+            console.error('Error initializing database:', error);
+        }
+    })
     .catch(err => console.error('MongoDB connection error:', err));
 
 
