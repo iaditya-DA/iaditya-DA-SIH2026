@@ -8,36 +8,42 @@ const DEV_SKILLS = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Deve
 // Announcement Banner Component
 const AnnouncementBanner = () => {
     return (
-        <div className="relative bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 py-3 overflow-hidden border-b border-red-500/30">
+        <div className="relative bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 py-3 overflow-hidden border-b border-purple-500/30">
             <div className="absolute inset-0 bg-black/20"></div>
             <div className="relative">
                 <div className="flex animate-marquee whitespace-nowrap">
                     <div className="mx-4 flex items-center space-x-8">
                         <span className="text-white font-bold text-lg flex items-center">
-                            🚨 IMPORTANT NOTICE:
+                            🎉 REGISTRATION CLOSED:
                         </span>
                         <span className="text-white font-semibold">
-                            Individual registrations are now CLOSED ❌
+                            All registrations are now CLOSED ✅
                         </span>
                         <span className="text-white font-semibold">
-                            Team registration deadline: 12th September 2025, 1:00 PM ⏰
+                            PPT Presentation Results: Monday, 15th September 2025 📊
                         </span>
                         <span className="text-white font-bold">
-                            Register your team NOW before it's too late! 🔥
+                            Team Leaders: Join WhatsApp group (check your WhatsApp!) 📱
+                        </span>
+                        <span className="text-white font-semibold">
+                            Stay tuned for exciting updates! 🚀
                         </span>
                     </div>
                     <div className="mx-4 flex items-center space-x-8">
                         <span className="text-white font-bold text-lg flex items-center">
-                            🚨 IMPORTANT NOTICE:
+                            🎉 REGISTRATION CLOSED:
                         </span>
                         <span className="text-white font-semibold">
-                            Individual registrations are now CLOSED ❌
+                            All registrations are now CLOSED ✅
                         </span>
                         <span className="text-white font-semibold">
-                            Team registration deadline: 12th September 2025, 1:00 PM ⏰
+                            PPT Presentation Results: Monday, 15th September 2025 📊
                         </span>
                         <span className="text-white font-bold">
-                            Register your team NOW before it's too late! 🔥
+                            Team Leaders: Join WhatsApp group (check your WhatsApp!) 📱
+                        </span>
+                        <span className="text-white font-semibold">
+                            Stay tuned for exciting updates! 🚀
                         </span>
                     </div>
                 </div>
@@ -95,11 +101,11 @@ const HomePage = ({ setPage }) => {
         { type: 'individual', text: "Priya M. from IT has teamed up with senior students for her first-ever hackathon." }
     ];
     const FAQ_DATA = [
-        { q: "Who is eligible to participate?", a: "All students currently enrolled in any course at LNCT University, Bhopal, are eligible to participate." },
-        { q: "Is there a registration fee?", a: "No, there is absolutely no registration fee. Participation is free for all eligible students." },
-        { q: "What is the team size limit?", a: "Teams must consist of a minimum of 2 members and a maximum of 6 members, including the team leader." },
-        { q: "Can I register as an individual?", a: "Yes! You can register as an individual. You can then find other individuals on the 'Registered' page to form a team." },
-        { q: "What if I have an issue during registration?", a: "Please reach out to the contacts listed at the bottom of this page for any registration-related issues." }
+        { q: "When will the PPT presentation results be announced?", a: "PPT presentation results will be announced on Monday, 15th September 2025. Stay tuned for updates!" },
+        { q: "Are registrations still open?", a: "No, all registrations (both individual and team) are now permanently closed. Thank you for your overwhelming response!" },
+        { q: "How can team leaders join the WhatsApp group?", a: "Team leaders should check their WhatsApp for the group invitation link. The invitation has been sent to the contact number provided during registration." },
+        { q: "What was the team size limit?", a: "Teams consisted of a minimum of 2 members and a maximum of 6 members, including the team leader." },
+        { q: "What if I have questions about my registration?", a: "Please reach out to the contacts listed at the bottom of this page for any registration-related queries." }
     ];
     
     useEffect(() => {
@@ -144,30 +150,52 @@ const HomePage = ({ setPage }) => {
                 <h1 className="text-5xl md:text-7xl font-bold tracking-tight title-animate bg-clip-text text-transparent bg-gradient-to-br from-white to-cyan-400">SIH 2025 Registration</h1>
                 <p className="text-xl md:text-2xl mt-4 text-cyan-200/80 subtitle-animate">LNCT University Bhopal</p>
                 <div className="home-content-animate my-10 max-w-3xl mx-auto bg-slate-800/30 p-8 rounded-2xl backdrop-blur-sm border border-slate-700/50">
-                    <h2 className="text-3xl font-bold text-cyan-300 mb-4">Join the Innovation Wave</h2>
-                    <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mt-4">
-                        <p className="text-red-300 font-semibold">⚠️ Individual Registration Closed</p>
-                        <p className="text-red-200 text-sm mt-1">Team registration closes on 12th September 2025 at 1:00 PM</p>
+                    <h2 className="text-3xl font-bold text-cyan-300 mb-4">SIH 2025 - Registration Complete! 🎉</h2>
+                    <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-green-300 font-semibold">✅ All Registrations are now CLOSED</p>
+                        <p className="text-green-200 text-sm mt-1">Thank you for your overwhelming response!</p>
+                    </div>
+                    <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-blue-300 font-semibold">📊 PPT Presentation Results</p>
+                        <p className="text-blue-200 text-sm mt-1">Results will be announced on <strong>Monday, 15th September 2025</strong></p>
+                    </div>
+                    <div className="bg-purple-500/20 border border-purple-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-purple-300 font-semibold">📱 Team Leaders WhatsApp Group</p>
+                        <p className="text-purple-200 text-sm mt-1">Check your WhatsApp for the group invitation link!</p>
                     </div>
                 </div>
                 <div className="space-y-4 md:space-y-0 md:space-x-6 flex flex-col md:flex-row justify-center">
-                    <button onClick={() => setPage('team')} className="home-button px-10 py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">Register a Team</button>
+                    <button disabled className="home-button px-10 py-4 text-xl bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg font-bold transition-all duration-300 cursor-not-allowed opacity-60 relative">
+                        <span className="line-through">Register a Team</span>
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">CLOSED</span>
+                    </button>
                     <button disabled className="home-button px-10 py-4 text-xl bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg font-bold transition-all duration-300 cursor-not-allowed opacity-60 relative">
                         <span className="line-through">Register as an Individual</span>
                         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">CLOSED</span>
                     </button>
-                    <button onClick={() => setPage('registered')} className="home-button px-10 py-4 text-xl bg-slate-700 hover:bg-slate-600 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">View Registered Participants</button>
+                    <button onClick={() => setPage('registered')} className="home-button px-10 py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">View Registered Participants</button>
                 </div>
             </div>
             <div className="py-20 animate-on-scroll">
-                <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Latest Activity</h2>
-                <div onClick={() => setPage('registered')} className="group relative w-full overflow-hidden cursor-pointer fade-in-up" style={{ maskImage: 'linear-gradient(to right, transparent, white 10%, white 90%, transparent)' }}>
-                    <div className="flex animate-scroll-x">
-                        {[...MOCK_TESTIMONIALS, ...MOCK_TESTIMONIALS].map((item, index) => (
-                            <div key={index} className="flex-shrink-0 w-80 h-32 flex items-center bg-slate-800/50 border border-slate-700 rounded-lg p-6 mx-4">
-                                <p className="text-slate-300">{item.text}</p>
-                            </div>
-                        ))}
+                <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Next Steps & Updates</h2>
+                <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center items-start gap-8 px-4">
+                    <div className="text-center fade-in-up bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                        <div className="text-4xl mb-3">📊</div>
+                        <h3 className="text-xl font-bold text-cyan-400 mb-2">Results Announcement</h3>
+                        <p className="text-slate-300 mb-2">PPT Presentation Results</p>
+                        <p className="text-cyan-300 font-semibold">Monday, 15th September 2025</p>
+                    </div>
+                    <div className="text-center fade-in-up bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                        <div className="text-4xl mb-3">📱</div>
+                        <h3 className="text-xl font-bold text-purple-400 mb-2">WhatsApp Group</h3>
+                        <p className="text-slate-300 mb-2">Team Leaders Only</p>
+                        <p className="text-purple-300 font-semibold">Check your WhatsApp!</p>
+                    </div>
+                    <div className="text-center fade-in-up bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                        <div className="text-4xl mb-3">✅</div>
+                        <h3 className="text-xl font-bold text-green-400 mb-2">Registration Status</h3>
+                        <p className="text-slate-300 mb-2">All Registrations</p>
+                        <p className="text-green-300 font-semibold">Closed Successfully</p>
                     </div>
                 </div>
             </div>
@@ -280,15 +308,34 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
             <AnnouncementBanner />
             <div className="p-4 md:p-8">
                 <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Team Registration Form</h2>
-                <div className="max-w-4xl mx-auto mb-6 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-yellow-400 text-xl">⏰</span>
-                        <p className="text-yellow-300 font-bold text-lg">Registration Deadline Alert!</p>
+                <div className="max-w-4xl mx-auto mb-6 bg-red-500/20 border border-red-500/50 rounded-lg p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="text-red-400 text-2xl">❌</span>
+                        <p className="text-red-300 font-bold text-xl">Team Registration Closed!</p>
                     </div>
-                    <p className="text-yellow-200">Team registrations close on <strong>12th September 2025 at 1:00 PM</strong>. Don't miss out!</p>
-                    <p className="text-yellow-200 text-sm mt-1">Individual registrations are now permanently closed.</p>
+                    <p className="text-red-200 text-lg mb-2">Team registrations have been permanently closed. Thank you for your participation!</p>
+                    <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-blue-300 font-semibold">📊 Next Steps:</p>
+                        <p className="text-blue-200 text-sm mt-1">PPT Presentation results will be announced on <strong>Monday, 15th September 2025</strong></p>
+                        <p className="text-blue-200 text-sm mt-1">Team Leaders: Please check your WhatsApp for group invitation!</p>
+                    </div>
                 </div>
-            <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6">
+            <form className="max-w-4xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6 relative">
+                <div className="absolute inset-0 bg-red-900/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                    <div className="text-center p-8">
+                        <div className="text-6xl mb-4">❌</div>
+                        <h3 className="text-3xl font-bold text-red-400 mb-2">Registration Closed</h3>
+                        <p className="text-red-300 text-lg">Team registrations are no longer accepting new submissions.</p>
+                        <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/50 rounded-lg">
+                            <p className="text-blue-300 font-semibold">What's Next?</p>
+                            <p className="text-blue-200 text-sm mt-1">Results announcement: Monday, 15th September 2025</p>
+                            <p className="text-blue-200 text-sm">Team Leaders: Check WhatsApp for group details!</p>
+                        </div>
+                        <button onClick={() => setPage('registered')} className="mt-6 px-8 py-3 bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">
+                            View Registered Teams
+                        </button>
+                    </div>
+                </div>
                 <input type="text" value={formData.teamName} onChange={(e) => setFormData({...formData, teamName: e.target.value})} placeholder="Team Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition text-xl" />
                 <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({...formData, problemStatement: e.target.value})} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700 pt-5">
@@ -301,9 +348,6 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
                     <input name="discord" value={formData.leaderContact.discord} onChange={handleContactChange} type="text" placeholder="Leader Discord ID (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
                 </div>
                 {formData.members.map((member, i) => <MemberInput key={i} memberNumber={i + 1} data={member} onChange={(e) => handleMemberChange(i, e)} />)}
-                <button type="submit" disabled={loading} className="w-full py-4 text-xl bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed">
-                    {loading ? 'Submitting...' : 'Submit Team Registration'}
-                </button>
             </form>
             </div>
         </div>
@@ -588,11 +632,15 @@ export default function App() {
     }
 
     switch (page) {
-      case 'team': return <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} />;
+      case 'team': 
+        // Team registration is now closed, redirect to home
+        setPage('home');
+        showAlert('Team registration has been closed. Results will be announced on Monday, 15th September 2025.');
+        return <HomePage setPage={setPage} />;
       case 'individual': 
         // Individual registration is now closed, redirect to home
         setPage('home');
-        showAlert('Individual registration has been closed. Only team registrations are accepted now.');
+        showAlert('Individual registration has been closed. Only team registrations were accepted, which are also now closed.');
         return <HomePage setPage={setPage} />;
       case 'registered': return <RegisteredPage teams={teams} individuals={individuals} />;
       default: return <HomePage setPage={setPage} />;
@@ -601,9 +649,33 @@ export default function App() {
 
   return (
     <div className="bg-slate-900 min-h-screen flex flex-col font-sans relative overflow-x-hidden">
+        {/* Enhanced Multi-layer Animated Background */}
         <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-800 opacity-80"></div>
-        <div className="absolute top-0 left-[-10rem] w-[40rem] h-[40rem] bg-cyan-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-0 right-[-10rem] w-[40rem] h-[40rem] bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow animation-delay-4000"></div>
+        
+        {/* Floating Orbs Layer 1 */}
+        <div className="absolute top-0 left-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-cyan-500/15 to-blue-500/10 rounded-full blur-3xl animate-float-slow"></div>
+        <div className="absolute bottom-0 right-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-purple-500/15 to-pink-500/10 rounded-full blur-3xl animate-float-slow animation-delay-2000"></div>
+        
+        {/* Floating Orbs Layer 2 - Medium */}
+        <div className="absolute top-1/4 right-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-emerald-500/12 to-teal-500/8 rounded-full blur-2xl animate-float-medium animation-delay-4000"></div>
+        <div className="absolute bottom-1/4 left-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-orange-500/12 to-red-500/8 rounded-full blur-2xl animate-float-medium animation-delay-6000"></div>
+        
+        {/* Floating Orbs Layer 3 - Small */}
+        <div className="absolute top-1/2 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-br from-violet-500/10 to-indigo-500/6 rounded-full blur-xl animate-float-fast animation-delay-1000"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-br from-lime-500/10 to-green-500/6 rounded-full blur-xl animate-float-fast animation-delay-3000"></div>
+        
+        {/* Particle Stars */}
+        <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 left-1/5 w-2 h-2 bg-cyan-400 rounded-full animate-twinkle animation-delay-500"></div>
+            <div className="absolute top-1/3 right-1/5 w-1 h-1 bg-purple-400 rounded-full animate-twinkle animation-delay-1500"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-twinkle animation-delay-2500"></div>
+            <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-twinkle animation-delay-3500"></div>
+            <div className="absolute top-2/3 left-2/3 w-2 h-2 bg-orange-400 rounded-full animate-twinkle animation-delay-4500"></div>
+            <div className="absolute top-1/6 right-2/3 w-1 h-1 bg-blue-400 rounded-full animate-twinkle animation-delay-5500"></div>
+        </div>
+        
+        {/* Gradient Overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-transparent to-slate-900/50 pointer-events-none"></div>
 
         <nav className="sticky top-0 p-4 bg-slate-900/80 md:backdrop-blur-lg z-20 border-b border-slate-800">
             <div className="container mx-auto flex justify-between items-center">
@@ -615,9 +687,13 @@ export default function App() {
                 </div>
                 
                 <div className="hidden md:flex space-x-2">
-                    {['home', 'team', 'registered'].map(p => (
-                        <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'team' ? 'Teams' : p === 'registered' ? 'Registered' : 'Home'}</button>
+                    {['home', 'registered'].map(p => (
+                        <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'registered' ? 'Registered' : 'Home'}</button>
                     ))}
+                    <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                        Teams
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
+                    </button>
                     <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
                         Individuals
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
@@ -636,11 +712,15 @@ export default function App() {
         
         <div className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
             <div className="flex flex-col items-center justify-center h-full space-y-8">
-                {['home', 'team', 'registered'].map(p => (
+                {['home', 'registered'].map(p => (
                     <button key={p} onClick={() => { handleNav(p); setIsMenuOpen(false); }} className={`text-3xl capitalize font-bold transition-colors ${page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'}`}>
-                        {p === 'team' ? 'Teams' : p === 'registered' ? 'Registered' : 'Home'}
+                        {p === 'registered' ? 'Registered' : 'Home'}
                     </button>
                 ))}
+                <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
+                    Teams
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
+                </div>
                 <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
                     Individuals
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
@@ -661,17 +741,75 @@ export default function App() {
         )}
 
         <style>{`
-            .bg-grid-slate-800 { background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px); background-size: 2rem 2rem; }
-            .animate-pulse-slow { animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+            .bg-grid-slate-800 { 
+                background-image: 
+                    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), 
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px); 
+                background-size: 2rem 2rem;
+                animation: grid-move 20s linear infinite;
+            }
+            
+            @keyframes grid-move {
+                0% { transform: translate(0, 0); }
+                100% { transform: translate(2rem, 2rem); }
+            }
+            
+            @keyframes float-slow {
+                0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                25% { transform: translate(20px, -30px) rotate(90deg); }
+                50% { transform: translate(-15px, -20px) rotate(180deg); }
+                75% { transform: translate(-25px, 15px) rotate(270deg); }
+            }
+            
+            @keyframes float-medium {
+                0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+                33% { transform: translate(30px, -20px) rotate(120deg) scale(1.1); }
+                66% { transform: translate(-20px, 25px) rotate(240deg) scale(0.9); }
+            }
+            
+            @keyframes float-fast {
+                0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                20% { transform: translate(15px, -25px) rotate(72deg); }
+                40% { transform: translate(-10px, -15px) rotate(144deg); }
+                60% { transform: translate(-20px, 10px) rotate(216deg); }
+                80% { transform: translate(25px, 20px) rotate(288deg); }
+            }
+            
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.3; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.2); }
+            }
+            
+            .animate-float-slow { animation: float-slow 12s ease-in-out infinite; }
+            .animate-float-medium { animation: float-medium 8s ease-in-out infinite; }
+            .animate-float-fast { animation: float-fast 6s ease-in-out infinite; }
+            .animate-twinkle { animation: twinkle 3s ease-in-out infinite; }
+            
+            .animation-delay-1000 { animation-delay: 1s; }
+            .animation-delay-2000 { animation-delay: 2s; }
+            .animation-delay-3000 { animation-delay: 3s; }
             .animation-delay-4000 { animation-delay: 4s; }
+            .animation-delay-5000 { animation-delay: 5s; }
+            .animation-delay-6000 { animation-delay: 6s; }
+            .animation-delay-500 { animation-delay: 0.5s; }
+            .animation-delay-1500 { animation-delay: 1.5s; }
+            .animation-delay-2500 { animation-delay: 2.5s; }
+            .animation-delay-3500 { animation-delay: 3.5s; }
+            .animation-delay-4500 { animation-delay: 4.5s; }
+            .animation-delay-5500 { animation-delay: 5.5s; }
+            
+            .animate-pulse-slow { animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
             @keyframes pulse { 50% { opacity: .5; } }
+            
             .panel .overflow-y-auto::-webkit-scrollbar { width: 6px; }
             .panel .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
             .panel .overflow-y-auto::-webkit-scrollbar-thumb { background-color: rgba(134, 239, 172, 0.3); border-radius: 20px; border: 3px solid transparent; }
             .panel .overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: rgba(134, 239, 172, 0.5); }
+            
             @keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
             .animate-scroll-x { animation: scroll-x 40s linear infinite; }
             .group:hover .animate-scroll-x { animation-play-state: paused; }
+            
             @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
             .animate-marquee { animation: marquee 20s linear infinite; }
         `}</style>
