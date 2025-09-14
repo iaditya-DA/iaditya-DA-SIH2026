@@ -1,1 +1,68 @@
 @import "tailwindcss";
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but keep functionality */
+body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+body::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.3);
+  border-radius: 4px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
+}
+
+/* Custom selection colors */
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: white;
+}
+
+::-moz-selection {
+  background: rgba(6, 182, 212, 0.3);
+  color: white;
+}
+
+/* Enhanced backdrop blur for better performance */
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Improved focus styles */
+button:focus,
+input:focus,
+a:focus {
+  outline: 2px solid rgba(6, 182, 212, 0.5);
+  outline-offset: 2px;
+}
+
+/* Responsive font sizes */
+@media (max-width: 640px) {
+  .text-responsive-xl {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 641px) {
+  .text-responsive-xl {
+    font-size: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-xl {
+    font-size: 6rem;
+  }
+}

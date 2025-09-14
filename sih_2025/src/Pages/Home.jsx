@@ -1,4 +1,136 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { EpicBackground } from '../Components/AnimatedBackground.jsx';
+
+// --- Animated Background Component ---
+const ParticleBackground = () => {
+    const canvasRef = useRef(null);
+    const animationRef = useRef(null);
+    const particlesRef = useRef([]);
+    const mouseRef = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        
+        // Resize canvas
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle class
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(6, 182, 212, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        // Initialize particles
+        for (let i = 0; i < 80; i++) {
+            particles.push(new Particle());
+        }
+        particlesRef.current = particles;
+
+        // Mouse movement handler
+        const handleMouseMove = (e) => {
+            mouseRef.current = {
+                x: e.clientX,
+                y: e.clientY
+            };
+        };
+        
+        window.addEventListener('mousemove', handleMouseMove);
+
+        // Animation loop
+        const animate = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw particles
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Draw connections
+            particles.forEach((particle, i) => {
+                particles.slice(i + 1).forEach(otherParticle => {
+                    const dx = particle.x - otherParticle.x;
+                    const dy = particle.y - otherParticle.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particle.x, particle.y);
+                        ctx.lineTo(otherParticle.x, otherParticle.y);
+                        ctx.strokeStyle = `rgba(6, 182, 212, ${0.3 - distance / 400})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                });
+
+                // Mouse interaction
+                const dx = particle.x - mouseRef.current.x;
+                const dy = particle.y - mouseRef.current.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 150) {
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x, particle.y);
+                    ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
+                    ctx.strokeStyle = `rgba(139, 92, 246, ${0.4 - distance / 375})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+            window.removeEventListener('mousemove', handleMouseMove);
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="fixed top-0 left-0 w-full h-full pointer-events-none z-0"
+            style={{ background: 'transparent' }}
+        />
+    );
+};
 
 // --- Reusable Components ---
 
@@ -649,6 +781,8 @@ export default function App() {
 
   return (
     <div className="bg-slate-900 min-h-screen flex flex-col font-sans relative overflow-x-hidden">
+        {/* Epic Multi-Layer Animated Background */}
+        <EpicBackground />
         {/* Enhanced Multi-layer Animated Background */}
         <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-800 opacity-80"></div>
         
