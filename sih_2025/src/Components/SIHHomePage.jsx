@@ -58,11 +58,11 @@ const SIHFluidHero = ({ setPage }) => {
               </motion.div>
               
               <motion.div 
-                className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-4"
+                className="bg-green-500/20 border border-green-500/50 rounded-xl p-4"
                 whileHover={{ scale: 1.02, y: -5 }}
               >
-                <p className="text-blue-300 font-semibold">📊 PPT Results</p>
-                <p className="text-blue-200 text-sm mt-1">Monday, 15th September 2025</p>
+                <p className="text-green-300 font-semibold">🎉 Round 1 Results ANNOUNCED!</p>
+                <p className="text-green-200 text-sm mt-1">PPT Round results are now available!</p>
               </motion.div>
               
               <motion.div 
@@ -99,6 +99,15 @@ const SIHFluidHero = ({ setPage }) => {
           >
             <span className="line-through">Register Individual</span>
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">CLOSED</span>
+          </motion.button>
+          
+          <motion.button
+            onClick={() => setPage('results')}
+            className="px-10 py-4 text-xl bg-gradient-to-br from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 rounded-2xl font-bold transition-all duration-300"
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            🎉 View Round 1 Results
           </motion.button>
           
           <motion.button
@@ -146,7 +155,7 @@ const SIHContentSections = () => {
   const [openFaq, setOpenFaq] = useState(null);
   
   const FAQ_DATA = [
-    { q: "When will the PPT presentation results be announced?", a: "PPT presentation results will be announced on Monday, 15th September 2025. Stay tuned for updates!" },
+    { q: "Where can I find the Round 1 results?", a: "Round 1 PPT presentation results are now available! Click on 'View Round 1 Results' button on the home page or navigate to the Results section." },
     { q: "Are registrations still open?", a: "No, all registrations (both individual and team) are now permanently closed. Thank you for your overwhelming response!" },
     { q: "How can team leaders join the WhatsApp group?", a: "Team leaders should check their WhatsApp for the group invitation link. The invitation has been sent to the contact number provided during registration." },
     { q: "What was the team size limit?", a: "Teams consisted of a minimum of 2 members and a maximum of 6 members, including the team leader." },
@@ -170,9 +179,9 @@ const SIHContentSections = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { emoji: "📊", title: "Results Announcement", subtitle: "PPT Presentation Results", date: "Monday, 15th September 2025", color: "cyan" },
+              { emoji: "🎉", title: "Round 1 Results", subtitle: "PPT Round Results", date: "NOW AVAILABLE!", color: "emerald" },
               { emoji: "📱", title: "WhatsApp Group", subtitle: "Team Leaders Only", date: "Check your WhatsApp!", color: "purple" },
-              { emoji: "✅", title: "Registration Status", subtitle: "All Registrations", date: "Closed Successfully", color: "emerald" }
+              { emoji: "✅", title: "Registration Status", subtitle: "All Registrations", date: "Closed Successfully", color: "cyan" }
             ].map((item, index) => (
               <motion.div
                 key={index}

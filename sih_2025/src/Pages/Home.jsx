@@ -146,13 +146,13 @@ const AnnouncementBanner = () => {
                 <div className="flex animate-marquee whitespace-nowrap">
                     <div className="mx-4 flex items-center space-x-8">
                         <span className="text-white font-bold text-lg flex items-center">
-                            🎉 REGISTRATION CLOSED:
+                            🎉 ROUND 1 RESULTS:
                         </span>
                         <span className="text-white font-semibold">
-                            All registrations are now CLOSED ✅
+                            🎉 Round 1 Results ANNOUNCED!
                         </span>
                         <span className="text-white font-semibold">
-                            PPT Presentation Results: Monday, 15th September 2025 📊
+                            PPT Round: 22 BCA/MCA teams selected 📊
                         </span>
                         <span className="text-white font-bold">
                             Team Leaders: Join WhatsApp group (check your WhatsApp!) 📱
@@ -163,13 +163,13 @@ const AnnouncementBanner = () => {
                     </div>
                     <div className="mx-4 flex items-center space-x-8">
                         <span className="text-white font-bold text-lg flex items-center">
-                            🎉 REGISTRATION CLOSED:
+                            🎉 ROUND 1 RESULTS:
                         </span>
                         <span className="text-white font-semibold">
-                            All registrations are now CLOSED ✅
+                            🎉 Round 1 Results ANNOUNCED!
                         </span>
                         <span className="text-white font-semibold">
-                            PPT Presentation Results: Monday, 15th September 2025 📊
+                            PPT Round: 22 BCA/MCA teams selected 📊
                         </span>
                         <span className="text-white font-bold">
                             Team Leaders: Join WhatsApp group (check your WhatsApp!) 📱
@@ -233,7 +233,7 @@ const HomePage = ({ setPage }) => {
         { type: 'individual', text: "Priya M. from IT has teamed up with senior students for her first-ever hackathon." }
     ];
     const FAQ_DATA = [
-        { q: "When will the PPT presentation results be announced?", a: "PPT presentation results will be announced on Monday, 15th September 2025. Stay tuned for updates!" },
+        { q: "Where can I find the Round 1 results?", a: "Round 1 PPT presentation results are now available! Navigate to the Results section or check the announcements on the home page." },
         { q: "Are registrations still open?", a: "No, all registrations (both individual and team) are now permanently closed. Thank you for your overwhelming response!" },
         { q: "How can team leaders join the WhatsApp group?", a: "Team leaders should check their WhatsApp for the group invitation link. The invitation has been sent to the contact number provided during registration." },
         { q: "What was the team size limit?", a: "Teams consisted of a minimum of 2 members and a maximum of 6 members, including the team leader." },
@@ -287,9 +287,9 @@ const HomePage = ({ setPage }) => {
                         <p className="text-green-300 font-semibold">✅ All Registrations are now CLOSED</p>
                         <p className="text-green-200 text-sm mt-1">Thank you for your overwhelming response!</p>
                     </div>
-                    <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mt-4">
-                        <p className="text-blue-300 font-semibold">📊 PPT Presentation Results</p>
-                        <p className="text-blue-200 text-sm mt-1">Results will be announced on <strong>Monday, 15th September 2025</strong></p>
+                    <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mt-4">
+                        <p className="text-green-300 font-semibold">🎉 Round 1 Results ANNOUNCED!</p>
+                        <p className="text-green-200 text-sm mt-1">PPT Round results are now available!</p>
                     </div>
                     <div className="bg-purple-500/20 border border-purple-500/50 rounded-lg p-4 mt-4">
                         <p className="text-purple-300 font-semibold">📱 Team Leaders WhatsApp Group</p>
@@ -312,10 +312,10 @@ const HomePage = ({ setPage }) => {
                 <h2 className="text-4xl font-bold text-center mb-12 text-cyan-300 fade-in-up">Next Steps & Updates</h2>
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center items-start gap-8 px-4">
                     <div className="text-center fade-in-up bg-slate-800/50 p-6 rounded-xl border border-slate-700">
-                        <div className="text-4xl mb-3">📊</div>
-                        <h3 className="text-xl font-bold text-cyan-400 mb-2">Results Announcement</h3>
-                        <p className="text-slate-300 mb-2">PPT Presentation Results</p>
-                        <p className="text-cyan-300 font-semibold">Monday, 15th September 2025</p>
+                        <div className="text-4xl mb-3">🎉</div>
+                        <h3 className="text-xl font-bold text-emerald-400 mb-2">Round 1 Results</h3>
+                        <p className="text-slate-300 mb-2">PPT Round Results</p>
+                        <p className="text-emerald-300 font-semibold">NOW AVAILABLE!</p>
                     </div>
                     <div className="text-center fade-in-up bg-slate-800/50 p-6 rounded-xl border border-slate-700">
                         <div className="text-4xl mb-3">📱</div>

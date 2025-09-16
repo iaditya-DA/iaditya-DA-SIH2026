@@ -58,6 +58,26 @@ const TeamSchema = new Schema({
     registeredAt: { type: Date, default: Date.now }
 });
 
+// --- Schema for SIH Results ---
+const ResultSchema = new Schema({
+    teamNumber: { type: Number, required: true, unique: true },
+    teamName: { type: String, required: true, trim: true },
+    branch: { type: String, required: true }, // BCA, MCA, etc.
+    college: { type: String, required: true, trim: true },
+    problemStatement: { type: String, trim: true },
+    status: { 
+        type: String, 
+        enum: ['Selected', 'Not Selected', 'Pending'], 
+        default: 'Pending' 
+    },
+    round: { type: String, default: 'Round 1' },
+    score: { type: Number, default: 0 },
+    remarks: { type: String, trim: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
 // Fix for Vercel Serverless (avoid OverwriteModelError)
 export const Individual = mongoose.models.Individual || mongoose.model('Individual', IndividualSchema);
 export const Team = mongoose.models.Team || mongoose.model('Team', TeamSchema);
+export const Result = mongoose.models.Result || mongoose.model('Result', ResultSchema);

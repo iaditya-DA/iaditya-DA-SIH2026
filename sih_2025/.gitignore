@@ -26,3 +26,88 @@ dist-ssr
 .vercel
 # Temporary files
 WARP.md
+
+# Personal Data & Documents - DO NOT COMMIT
+# PDF files (results, documents, reports)
+*.pdf
+*.PDF
+
+# Personal/sensitive data files
+*.xlsx
+*.xls
+*.csv
+*.docx
+*.doc
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables & configuration
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Personal directories
+/personal/
+/documents/
+/data/
+/uploads/
+/results/
+/exports/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# JSON files containing personal data
+structured_output.json
+team_data.json
+registration_data.json
+bca_mca_teams.json
+*_structured.json
+*_teams.json
+
+# Python cache and temp files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Personal scripts output
+converter_output/
+processed_data/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
