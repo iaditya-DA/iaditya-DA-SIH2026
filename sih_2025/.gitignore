@@ -1,3 +1,14 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Build output
+dist
+dist-ssr
+build/
+*.local
+
 # Logs
 logs
 *.log
@@ -7,25 +18,33 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
+# Deployment
 .vercel
+
 # Temporary files
 WARP.md
+
+# Environment variables & configuration
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase / service account credentials — NEVER commit these
+firebase-service-account.json
+*firebase-adminsdk*.json
+serviceAccountKey.json
 
 # Personal Data & Documents - DO NOT COMMIT
 # PDF files (results, documents, reports)
@@ -43,13 +62,6 @@ WARP.md
 *.db
 *.sqlite
 *.sqlite3
-
-# Environment variables & configuration
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Personal directories
 /personal/
@@ -72,15 +84,13 @@ bca_mca_teams.json
 *_structured.json
 *_teams.json
 
-# Python cache and temp files
+# Python cache and temp files (in case any scripts/backend tooling used these)
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -100,14 +110,12 @@ converter_output/
 processed_data/
 
 # OS generated files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Mac
 .DS_Store
 .AppleDouble
 .LSOverride
 Icon
 ._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
