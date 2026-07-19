@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EpicBackground } from '../Components/AnimatedBackground.jsx';
-
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebaseClient.js';
+import { useAuth } from '../AuthContext.jsx';
 // --- Animated Background Component ---
 const ParticleBackground = () => {
     const canvasRef = useRef(null);
@@ -14,13 +16,13 @@ const ParticleBackground = () => {
 
         const ctx = canvas.getContext('2d');
         let particles = [];
-        
+
         // Resize canvas
         const resizeCanvas = () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         };
-        
+
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
@@ -64,7 +66,7 @@ const ParticleBackground = () => {
                 y: e.clientY
             };
         };
-        
+
         window.addEventListener('mousemove', handleMouseMove);
 
         // Animation loop
@@ -213,7 +215,7 @@ const SkillsSelector = ({ selectedSkills, onSkillsChange }) => {
                     type="button"
                     key={skill}
                     onClick={() => toggleSkill(skill)}
-                    className={`px-3 py-1.5 text-sm rounded-full transition-all duration-200 ${selectedSkills.includes(skill) ? 'bg-cyan-500 text-white font-semibold shadow-md' : 'bg-slate-600/50 text-slate-300 hover:bg-slate-600'}`}
+                    className={`px-3 py-1.5 text-sm rounded-full transition-all duration-200 ${selectedSkills.includes(skill) ? 'bg-orange-500 text-white font-bold shadow-md' : 'bg-gray-100 border border-gray-300 text-slate-700 hover:bg-gray-200'}`}
                 >
                     {skill}
                 </button>
@@ -239,17 +241,17 @@ const HomePage = ({ setPage }) => {
         { q: "What was the team size limit?", a: "Teams consisted of a minimum of 2 members and a maximum of 6 members, including the team leader." },
         { q: "What if I have questions about my registration?", a: "Please reach out to the contacts listed at the bottom of this page for any registration-related queries." }
     ];
-    
+
     useEffect(() => {
         const initAnimations = () => {
             const anime = window.anime;
-            if (!anime) return; 
+            if (!anime) return;
 
             anime.timeline({ easing: 'easeOutExpo' })
                 .add({ targets: '.title-animate', translateY: [-50, 0], opacity: [0, 1], duration: 800 })
                 .add({ targets: '.subtitle-animate', translateY: [-30, 0], opacity: [0, 1], duration: 600 }, '-=400')
                 .add({ targets: '.home-content-animate, .home-button', translateY: [50, 0], opacity: [0, 1], duration: 800, delay: anime.stagger(150) }, '-=600');
-            
+
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -279,10 +281,10 @@ const HomePage = ({ setPage }) => {
         <div className="flex-grow text-white">
             <AnnouncementBanner />
             <div className="text-center px-4 pt-12 pb-20">
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight title-animate bg-clip-text text-transparent bg-gradient-to-br from-white to-cyan-400">SIH 2025 Registration</h1>
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight title-animate bg-clip-text text-transparent bg-gradient-to-br from-white to-cyan-400">SIH 2026 Registration</h1>
                 <p className="text-xl md:text-2xl mt-4 text-cyan-200/80 subtitle-animate">LNCT University Bhopal</p>
                 <div className="home-content-animate my-10 max-w-3xl mx-auto bg-slate-800/30 p-8 rounded-2xl backdrop-blur-sm border border-slate-700/50">
-                    <h2 className="text-3xl font-bold text-cyan-300 mb-4">SIH 2025 - Registration Complete! 🎉</h2>
+                    <h2 className="text-3xl font-bold text-cyan-300 mb-4">SIH 2026 - Registration Complete! 🎉</h2>
                     <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4 mt-4">
                         <p className="text-green-300 font-semibold">✅ All Registrations are now CLOSED</p>
                         <p className="text-green-200 text-sm mt-1">Thank you for your overwhelming response!</p>
@@ -367,28 +369,28 @@ const HomePage = ({ setPage }) => {
 };
 
 const MemberInput = ({ memberNumber, data, onChange }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5 border-t border-slate-700 pt-5 mt-5">
-        <h3 className="md:col-span-2 text-lg font-semibold text-cyan-400">Member {memberNumber}</h3>
-        <input name="name" value={data.name} onChange={onChange} type="text" placeholder="Member Name" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="year" value={data.year} onChange={onChange} type="text" placeholder="Year" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="branch" value={data.branch} onChange={onChange} type="text" placeholder="Branch" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="githubLink" value={data.githubLink} onChange={onChange} type="url" placeholder="GitHub Link (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="contactNumber" value={data.contactNumber} onChange={onChange} type="tel" placeholder="Contact Number" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-        <input name="instagram" value={data.instagram} onChange={onChange} type="text" placeholder="Instagram Username" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5 border-t border-gray-200 pt-5 mt-5">
+        <h3 className="md:col-span-2 text-lg font-bold text-blue-900">Member {memberNumber}</h3>
+        <input name="name" value={data.name} onChange={onChange} type="text" placeholder="Member Name" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+        <input name="year" value={data.year} onChange={onChange} type="text" placeholder="Year" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+        <input name="branch" value={data.branch} onChange={onChange} type="text" placeholder="Branch" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+        <input name="githubLink" value={data.githubLink} onChange={onChange} type="url" placeholder="GitHub Link (Optional)" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+        <input name="contactNumber" value={data.contactNumber} onChange={onChange} type="tel" placeholder="Contact Number" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+        <input name="instagram" value={data.instagram} onChange={onChange} type="text" placeholder="Instagram Username" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
         <div className="md:col-span-2 space-y-2">
-            <label className="text-slate-300">Skills</label>
+            <label className="text-slate-700 font-semibold">Skills</label>
             <SkillsSelector selectedSkills={data.skills} onSkillsChange={(skills) => onChange({ target: { name: 'skills', value: skills } })} />
         </div>
-        <input name="otherSkills" value={data.otherSkills} onChange={onChange} type="text" placeholder="Other skills (comma-separated)" className="md:col-span-2 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <input name="otherSkills" value={data.otherSkills} onChange={onChange} type="text" placeholder="Other skills (comma-separated)" className="md:col-span-2 bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
     </div>
 );
 
-const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
+export const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
     const initialMemberState = { name: '', year: '', branch: '', githubLink: '', skills: [], contactNumber: '', instagram: '', otherSkills: '' };
     const [formData, setFormData] = useState({
         teamName: '',
         leader: { name: '', year: '1st Year', branch: 'CSE', githubLink: '', contactNumber: '' },
-        members: Array(5).fill(null).map(() => ({...initialMemberState})),
+        members: Array(5).fill(null).map(() => ({ ...initialMemberState })),
         leaderContact: { discord: '' },
         problemStatement: ''
     });
@@ -431,95 +433,86 @@ const TeamRegistration = ({ setPage, setTeams, showToast, showAlert }) => {
             showAlert("Please fill in all required fields for the team and leader.");
             return;
         }
-        const finalData = { ...formData, leaderContact: {...formData.leaderContact, phone: formData.leader.contactNumber } };
+        const finalData = { ...formData, leaderContact: { ...formData.leaderContact, phone: formData.leader.contactNumber } };
         registerTeam(finalData);
     };
-    
+
     return (
-        <div className="flex-grow text-white">
+        <div className="flex-grow text-slate-800 pb-20">
             <AnnouncementBanner />
             <div className="p-4 md:p-8">
-                <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Team Registration Form</h2>
-                <div className="max-w-4xl mx-auto mb-6 bg-red-500/20 border border-red-500/50 rounded-lg p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="text-red-400 text-2xl">❌</span>
-                        <p className="text-red-300 font-bold text-xl">Team Registration Closed!</p>
+                <h2 className="text-4xl font-bold text-center mb-8 text-blue-900">Team Registration Form</h2>
+
+                <form className="max-w-4xl mx-auto bg-white shadow-xl p-6 md:p-8 rounded-2xl border border-gray-200 space-y-6 relative">
+
+                    <input type="text" value={formData.teamName} onChange={(e) => setFormData({ ...formData, teamName: e.target.value })} placeholder="Team Name" required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition text-xl font-bold" />
+                    <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({ ...formData, problemStatement: e.target.value })} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-5">
+                        <h3 className="md:col-span-2 text-xl font-bold text-blue-900 border-b border-gray-200 pb-2">Team Leader</h3>
+                        <input name="name" value={formData.leader.name} onChange={handleLeaderChange} type="text" placeholder="Leader's Name" required className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                        <input name="year" value={formData.leader.year} onChange={handleLeaderChange} type="text" placeholder="Year" required className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                        <input name="branch" value={formData.leader.branch} onChange={handleLeaderChange} type="text" placeholder="Branch" required className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                        <input name="githubLink" value={formData.leader.githubLink} onChange={handleLeaderChange} type="url" placeholder="GitHub Link (Optional)" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                        <input name="contactNumber" value={formData.leader.contactNumber} onChange={handleLeaderChange} type="tel" placeholder="Leader Contact Number" required className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                        <input name="discord" value={formData.leaderContact.discord} onChange={handleContactChange} type="text" placeholder="Leader Discord ID (Optional)" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
                     </div>
-                    <p className="text-red-200 text-lg mb-2">Team registrations have been permanently closed. Thank you for your participation!</p>
-                    <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-4 mt-4">
-                        <p className="text-blue-300 font-semibold">📊 Next Steps:</p>
-                        <p className="text-blue-200 text-sm mt-1">PPT Presentation results will be announced on <strong>Monday, 15th September 2025</strong></p>
-                        <p className="text-blue-200 text-sm mt-1">Team Leaders: Please check your WhatsApp for group invitation!</p>
-                    </div>
-                </div>
-            <form className="max-w-4xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6 relative">
-                <div className="absolute inset-0 bg-red-900/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                    <div className="text-center p-8">
-                        <div className="text-6xl mb-4">❌</div>
-                        <h3 className="text-3xl font-bold text-red-400 mb-2">Registration Closed</h3>
-                        <p className="text-red-300 text-lg">Team registrations are no longer accepting new submissions.</p>
-                        <div className="mt-6 p-4 bg-blue-500/20 border border-blue-500/50 rounded-lg">
-                            <p className="text-blue-300 font-semibold">What's Next?</p>
-                            <p className="text-blue-200 text-sm mt-1">Results announcement: Monday, 15th September 2025</p>
-                            <p className="text-blue-200 text-sm">Team Leaders: Check WhatsApp for group details!</p>
-                        </div>
-                        <button onClick={() => setPage('registered')} className="mt-6 px-8 py-3 bg-gradient-to-br from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg">
-                            View Registered Teams
-                        </button>
-                    </div>
-                </div>
-                <input type="text" value={formData.teamName} onChange={(e) => setFormData({...formData, teamName: e.target.value})} placeholder="Team Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition text-xl" />
-                <textarea name="problemStatement" value={formData.problemStatement} onChange={(e) => setFormData({...formData, problemStatement: e.target.value})} placeholder="Problem Statement (Optional)" className="w-full h-24 bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700 pt-5">
-                    <h3 className="md:col-span-2 text-xl font-semibold text-cyan-400 border-b border-slate-700 pb-2">Team Leader</h3>
-                    <input name="name" value={formData.leader.name} onChange={handleLeaderChange} type="text" placeholder="Leader's Name" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="year" value={formData.leader.year} onChange={handleLeaderChange} type="text" placeholder="Year" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="branch" value={formData.leader.branch} onChange={handleLeaderChange} type="text" placeholder="Branch" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="githubLink" value={formData.leader.githubLink} onChange={handleLeaderChange} type="url" placeholder="GitHub Link (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="contactNumber" value={formData.leader.contactNumber} onChange={handleLeaderChange} type="tel" placeholder="Leader Contact Number" required className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="discord" value={formData.leaderContact.discord} onChange={handleContactChange} type="text" placeholder="Leader Discord ID (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                </div>
-                {formData.members.map((member, i) => <MemberInput key={i} memberNumber={i + 1} data={member} onChange={(e) => handleMemberChange(i, e)} />)}
-            </form>
+                    {formData.members.map((member, i) => <MemberInput key={i} memberNumber={i + 1} data={member} onChange={(e) => handleMemberChange(i, e)} />)}
+                </form>
             </div>
         </div>
     );
 };
 
-const IndividualRegistration = ({ setPage, setIndividuals, showToast, showAlert }) => {
+export const IndividualRegistration = ({ setPage, setIndividuals, showToast, showAlert }) => {
+    const { user, refreshRegistration } = useAuth();
     const [formData, setFormData] = useState({
         name: '', year: '1st Year', branch: 'BCA_AIDA', skills: [],
         contactNumber: '', github: '', discord: '', instagram: '', otherSkills: '',
         hasDeployed: false, productLink: ''
     });
     const [loading, setLoading] = useState(false);
-    
+
     const showDeployedCheckbox = formData.skills.some(s => DEV_SKILLS.includes(s));
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({...prev, [name]: type === 'checkbox' ? checked : value}));
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
-    
-    const handleSkillsChange = (skills) => setFormData(prev => ({...prev, skills}));
+
+    const handleSkillsChange = (skills) => setFormData(prev => ({ ...prev, skills }));
 
     const registerIndividual = async (individualData) => {
         setLoading(true);
         try {
-            const response = await fetch('/api/register/individual', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(individualData),
+            if (!user) {
+                showAlert('Please login first');
+                setPage && setPage('auth');
+                return;
+            }
+
+            await updateDoc(doc(db, 'users', user.uid), {
+                teamId: null,
+                name: individualData.name,
+                year: individualData.year,
+                branch: individualData.branch,
+                skills: individualData.skills,
+                otherSkills: individualData.otherSkills,
+                contactNumber: individualData.contactNumber,
+                github: individualData.github,
+                discord: individualData.discord,
+                instagram: individualData.instagram,
+                hasDeployed: individualData.hasDeployed,
+                productLink: individualData.productLink,
+                registered: true,
+                role: 'individual',
             });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.message || 'Registration failed');
-            setIndividuals(prev => [...prev, result]);
+
             showToast('Individual registration successful!');
             if (window.confetti) window.confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
             setTimeout(() => setPage('registered'), 2000);
         } catch (error) {
             console.error("Failed to register individual:", error);
-            showAlert(error.message);
+            showAlert('Failed to register. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -535,41 +528,49 @@ const IndividualRegistration = ({ setPage, setIndividuals, showToast, showAlert 
     };
 
     return (
-        <div className="flex-grow p-4 md:p-8 text-white">
-            <h2 className="text-4xl font-bold text-center mb-8 text-cyan-300">Individual Registration</h2>
-            <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-slate-800/50 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-slate-700 space-y-6">
-                <input name="name" value={formData.name} onChange={handleChange} type="text" placeholder="Full Name" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+        <div className="flex-grow p-4 md:p-8 text-slate-800 pb-20 relative">
+            <button
+                type="button"
+                onClick={() => setPage && setPage('registration-choice')}
+                className="absolute top-4 left-4 flex items-center gap-2 text-blue-900 font-bold text-lg border-2 border-blue-900 rounded-lg px-4 py-2 hover:bg-blue-900 hover:text-white transition-colors bg-white z-10"
+            >
+                <BackArrowIcon className="w-6 h-6" />
+                Back
+            </button>
+            <h2 className="text-4xl font-bold text-center mb-8 text-blue-900">Individual Registration</h2>
+            <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white shadow-xl p-6 md:p-8 rounded-2xl border border-gray-200 space-y-6">
+                <input name="name" value={formData.name} onChange={handleChange} type="text" placeholder="Full Name" required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <select name="year" value={formData.year} onChange={handleChange} required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition">
+                    <select name="year" value={formData.year} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition">
                         <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
                     </select>
-                    <select name="branch" value={formData.branch} onChange={handleChange} required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition">
+                    <select name="branch" value={formData.branch} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition">
                         <option>BCA_AIDA</option><option>BCA</option><option>MCA_AIML</option><option>MCA</option><option>CSE</option><option>Other BRANCH</option>
                     </select>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-slate-300">Your Skills</label>
+                    <label className="text-slate-700 font-semibold">Your Skills</label>
                     <SkillsSelector selectedSkills={formData.skills} onSkillsChange={handleSkillsChange} />
                 </div>
-                <input name="otherSkills" value={formData.otherSkills} onChange={handleChange} type="text" placeholder="Other skills (comma-separated)" className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+                <input name="otherSkills" value={formData.otherSkills} onChange={handleChange} type="text" placeholder="Other skills (comma-separated)" className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input name="contactNumber" value={formData.contactNumber} onChange={handleChange} type="tel" placeholder="Contact Number" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="instagram" value={formData.instagram} onChange={handleChange} type="text" placeholder="Instagram Username" required className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+                    <input name="contactNumber" value={formData.contactNumber} onChange={handleChange} type="tel" placeholder="Contact Number" required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                    <input name="instagram" value={formData.instagram} onChange={handleChange} type="text" placeholder="Instagram Username" required className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input name="github" value={formData.github} onChange={handleChange} type="url" placeholder="GitHub Link (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
-                    <input name="discord" value={formData.discord} onChange={handleChange} type="text" placeholder="Discord ID (Optional)" className="bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />
+                    <input name="github" value={formData.github} onChange={handleChange} type="url" placeholder="GitHub Link (Optional)" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
+                    <input name="discord" value={formData.discord} onChange={handleChange} type="text" placeholder="Discord ID (Optional)" className="bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />
                 </div>
                 {showDeployedCheckbox && (
-                    <div className="space-y-4 pt-4 border-t border-slate-700">
+                    <div className="space-y-4 pt-4 border-t border-gray-200">
                         <label className="flex items-center space-x-3 text-lg cursor-pointer">
-                            <input name="hasDeployed" checked={formData.hasDeployed} onChange={handleChange} type="checkbox" className="w-5 h-5 bg-slate-600 border-slate-500 rounded text-cyan-500 focus:ring-cyan-600" />
-                            <span>Have you ever deployed a real software product?</span>
+                            <input name="hasDeployed" checked={formData.hasDeployed} onChange={handleChange} type="checkbox" className="w-5 h-5 bg-gray-100 border-gray-300 rounded text-orange-500 focus:ring-orange-500" />
+                            <span className="text-slate-800 font-medium">Have you ever deployed a real software product?</span>
                         </label>
-                        {formData.hasDeployed && <input name="productLink" value={formData.productLink} onChange={handleChange} type="url" placeholder="Link to product (Optional)" required={formData.hasDeployed} className="w-full bg-slate-700/50 p-3 rounded-md focus:ring-2 focus:ring-cyan-500 outline-none transition" />}
+                        {formData.hasDeployed && <input name="productLink" value={formData.productLink} onChange={handleChange} type="url" placeholder="Link to product (Optional)" required={formData.hasDeployed} className="w-full bg-gray-50 border border-gray-300 text-slate-800 p-3 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition" />}
                     </div>
                 )}
-                <button type="submit" disabled={loading} className="w-full py-4 text-xl bg-gradient-to-br from-teal-600 to-green-600 hover:from-teal-500 hover:to-green-500 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed">
+                <button type="submit" disabled={loading} className="w-full py-4 text-xl bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
                     {loading ? 'Submitting...' : 'Submit Application'}
                 </button>
             </form>
@@ -580,7 +581,7 @@ const IndividualRegistration = ({ setPage, setIndividuals, showToast, showAlert 
 const RegisteredPage = ({ teams, individuals }) => {
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [contactInfo, setContactInfo] = useState(null);
-    
+
     const handleContactClick = (individual) => {
         if (individual.discord || individual.instagram || individual.contactNumber) {
             setContactInfo(individual);
@@ -588,7 +589,7 @@ const RegisteredPage = ({ teams, individuals }) => {
             setContactInfo({ ...individual, unavailable: true });
         }
     };
-    
+
     const closeModal = () => {
         setSelectedTeam(null);
         setContactInfo(null);
@@ -618,12 +619,12 @@ const RegisteredPage = ({ teams, individuals }) => {
                                 <h4 className="text-xl font-bold text-teal-200">{ind.name}</h4>
                                 <p className="text-slate-300">{ind.branch} - {ind.year}</p>
                                 <div className="flex flex-wrap gap-2 my-3">
-                                    {[...ind.skills, ...(ind.otherSkills ? ind.otherSkills.split(',').map(s=>s.trim()) : [])].slice(0, 5).map(skill => (
+                                    {[...ind.skills, ...(ind.otherSkills ? ind.otherSkills.split(',').map(s => s.trim()) : [])].slice(0, 5).map(skill => (
                                         <span key={skill} className="bg-slate-700 text-cyan-200 text-xs font-medium px-2.5 py-1 rounded-full">{skill}</span>
                                     ))}
                                 </div>
                                 <div className="border-t border-slate-700 pt-3 mt-3 flex justify-end">
-                                     <button onClick={() => handleContactClick(ind)} className="bg-teal-600 hover:bg-teal-500 px-5 py-2 rounded-lg font-semibold transition-transform transform hover:scale-105 text-sm">View Contact</button>
+                                    <button onClick={() => handleContactClick(ind)} className="bg-teal-600 hover:bg-teal-500 px-5 py-2 rounded-lg font-semibold transition-transform transform hover:scale-105 text-sm">View Contact</button>
                                 </div>
                             </div>
                         )) : <p className="text-center text-slate-500 py-8">No individuals have registered yet.</p>}
@@ -662,7 +663,7 @@ const TeamDetailsModal = ({ team, onClose }) => {
                                         <p><strong>{member.name}</strong> ({member.branch} - {member.year})</p>
                                         <p className="text-sm text-slate-400">Contact: {member.contactNumber} / Insta: @{member.instagram}</p>
                                         <div className="flex flex-wrap gap-2 mt-2">
-                                            {[...member.skills, ...(member.otherSkills ? member.otherSkills.split(',').map(s=>s.trim()) : [])].map(skill => (
+                                            {[...member.skills, ...(member.otherSkills ? member.otherSkills.split(',').map(s => s.trim()) : [])].map(skill => (
                                                 <span key={skill} className="bg-slate-600 text-cyan-200 text-xs font-medium px-2 py-0.5 rounded-full">{skill}</span>
                                             ))}
                                         </div>
@@ -672,7 +673,7 @@ const TeamDetailsModal = ({ team, onClose }) => {
                         </div>
                     )}
                 </div>
-                 <div className="p-4 bg-slate-800/50 border-t border-slate-700 sticky bottom-0 flex justify-end">
+                <div className="p-4 bg-slate-800/50 border-t border-slate-700 sticky bottom-0 flex justify-end">
                     <button onClick={onClose} className="bg-slate-600 hover:bg-slate-500 px-8 py-2 rounded-lg font-semibold">Close</button>
                 </div>
             </div>
@@ -714,167 +715,167 @@ const AlertModal = ({ message, show, onClose }) => {
 };
 
 export default function App() {
-  const [page, setPage] = useState('home');
-  const [teams, setTeams] = useState([]);
-  const [individuals, setIndividuals] = useState([]);
-  const [toast, setToast] = useState({ show: false, message: '' });
-  const [alert, setAlert] = useState({ show: false, message: '' });
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+    const [page, setPage] = useState('home');
+    const [teams, setTeams] = useState([]);
+    const [individuals, setIndividuals] = useState([]);
+    const [toast, setToast] = useState({ show: false, message: '' });
+    const [alert, setAlert] = useState({ show: false, message: '' });
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setIsLoading(true);
-      try {
-        const [teamsRes, individualsRes] = await Promise.all([
-          fetch('/api/teams'),
-          fetch('/api/individuals')
-        ]);
-        if (!teamsRes.ok || !individualsRes.ok) throw new Error('Network response was not ok');
-        const teamsData = await teamsRes.json();
-        const individualsData = await individualsRes.json();
-        setTeams(teamsData);
-        setIndividuals(individualsData);
-      } catch (error) {
-        console.error("Failed to fetch registered participants:", error);
-        showAlert("Could not load participant data.");
-      } finally {
-        setIsLoading(false);
-      }
+    useEffect(() => {
+        const fetchAllData = async () => {
+            setIsLoading(true);
+            try {
+                const [teamsRes, individualsRes] = await Promise.all([
+                    fetch('/api/teams'),
+                    fetch('/api/individuals')
+                ]);
+                if (!teamsRes.ok || !individualsRes.ok) throw new Error('Network response was not ok');
+                const teamsData = await teamsRes.json();
+                const individualsData = await individualsRes.json();
+                setTeams(teamsData);
+                setIndividuals(individualsData);
+            } catch (error) {
+                console.error("Failed to fetch registered participants:", error);
+                showAlert("Could not load participant data.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAllData();
+    }, []);
+
+    const showToast = (message) => {
+        setToast({ show: true, message });
+        setTimeout(() => setToast({ show: false, message: '' }), 3000);
     };
-    fetchAllData();
-  }, []);
 
-  const showToast = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
-  };
+    const showAlert = (message) => setAlert({ show: true, message });
+    const closeAlert = () => setAlert({ show: false, message: '' });
 
-  const showAlert = (message) => setAlert({ show: true, message });
-  const closeAlert = () => setAlert({ show: false, message: '' });
-  
-  const handleNav = (targetPage) => {
-    setPage(targetPage);
-    setIsMenuOpen(false);
-  }
-
-  const renderPage = () => {
-    if (isLoading && page === 'registered') {
-        return <div className="text-center text-slate-400 py-10 flex-grow">Loading participants...</div>;
+    const handleNav = (targetPage) => {
+        setPage(targetPage);
+        setIsMenuOpen(false);
     }
 
-    switch (page) {
-      case 'team': 
-        // Team registration is now closed, redirect to home
-        setPage('home');
-        showAlert('Team registration has been closed. Results will be announced on Monday, 15th September 2025.');
-        return <HomePage setPage={setPage} />;
-      case 'individual': 
-        // Individual registration is now closed, redirect to home
-        setPage('home');
-        showAlert('Individual registration has been closed. Only team registrations were accepted, which are also now closed.');
-        return <HomePage setPage={setPage} />;
-      case 'registered': return <RegisteredPage teams={teams} individuals={individuals} />;
-      default: return <HomePage setPage={setPage} />;
-    }
-  };
+    const renderPage = () => {
+        if (isLoading && page === 'registered') {
+            return <div className="text-center text-slate-400 py-10 flex-grow">Loading participants...</div>;
+        }
 
-  return (
-    <div className="bg-slate-900 min-h-screen flex flex-col font-sans relative overflow-x-hidden">
-        {/* Epic Multi-Layer Animated Background */}
-        <EpicBackground />
-        {/* Enhanced Multi-layer Animated Background */}
-        <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-800 opacity-80"></div>
-        
-        {/* Floating Orbs Layer 1 */}
-        <div className="absolute top-0 left-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-cyan-500/15 to-blue-500/10 rounded-full blur-3xl animate-float-slow"></div>
-        <div className="absolute bottom-0 right-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-purple-500/15 to-pink-500/10 rounded-full blur-3xl animate-float-slow animation-delay-2000"></div>
-        
-        {/* Floating Orbs Layer 2 - Medium */}
-        <div className="absolute top-1/4 right-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-emerald-500/12 to-teal-500/8 rounded-full blur-2xl animate-float-medium animation-delay-4000"></div>
-        <div className="absolute bottom-1/4 left-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-orange-500/12 to-red-500/8 rounded-full blur-2xl animate-float-medium animation-delay-6000"></div>
-        
-        {/* Floating Orbs Layer 3 - Small */}
-        <div className="absolute top-1/2 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-br from-violet-500/10 to-indigo-500/6 rounded-full blur-xl animate-float-fast animation-delay-1000"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-br from-lime-500/10 to-green-500/6 rounded-full blur-xl animate-float-fast animation-delay-3000"></div>
-        
-        {/* Particle Stars */}
-        <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute top-1/4 left-1/5 w-2 h-2 bg-cyan-400 rounded-full animate-twinkle animation-delay-500"></div>
-            <div className="absolute top-1/3 right-1/5 w-1 h-1 bg-purple-400 rounded-full animate-twinkle animation-delay-1500"></div>
-            <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-twinkle animation-delay-2500"></div>
-            <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-twinkle animation-delay-3500"></div>
-            <div className="absolute top-2/3 left-2/3 w-2 h-2 bg-orange-400 rounded-full animate-twinkle animation-delay-4500"></div>
-            <div className="absolute top-1/6 right-2/3 w-1 h-1 bg-blue-400 rounded-full animate-twinkle animation-delay-5500"></div>
-        </div>
-        
-        {/* Gradient Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-transparent to-slate-900/50 pointer-events-none"></div>
+        switch (page) {
+            case 'team':
+                // Team registration is now closed, redirect to home
+                setPage('home');
+                showAlert('Team registration has been closed. Results will be announced on Monday, 15th September 2025.');
+                return <HomePage setPage={setPage} />;
+            case 'individual':
+                // Individual registration is now closed, redirect to home
+                setPage('home');
+                showAlert('Individual registration has been closed. Only team registrations were accepted, which are also now closed.');
+                return <HomePage setPage={setPage} />;
+            case 'registered': return <RegisteredPage teams={teams} individuals={individuals} />;
+            default: return <HomePage setPage={setPage} />;
+        }
+    };
 
-        <nav className="sticky top-0 p-4 bg-slate-900/80 md:backdrop-blur-lg z-20 border-b border-slate-800">
-            <div className="container mx-auto flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    {page !== 'home' && (
-                        <button onClick={() => setPage('home')} className="text-white p-1 rounded-full hover:bg-slate-700"><BackArrowIcon className="w-6 h-6"/></button>
-                    )}
-                    <div onClick={() => setPage('home')} className="text-2xl font-bold text-white cursor-pointer">SIH <span className="text-cyan-400">LNCTU</span></div>
+    return (
+        <div className="bg-slate-900 min-h-screen flex flex-col font-sans relative overflow-x-hidden">
+            {/* Epic Multi-Layer Animated Background */}
+            <EpicBackground />
+            {/* Enhanced Multi-layer Animated Background */}
+            <div className="absolute top-0 left-0 w-full h-full bg-grid-slate-800 opacity-80"></div>
+
+            {/* Floating Orbs Layer 1 */}
+            <div className="absolute top-0 left-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-cyan-500/15 to-blue-500/10 rounded-full blur-3xl animate-float-slow"></div>
+            <div className="absolute bottom-0 right-[-15rem] w-[50rem] h-[50rem] bg-gradient-to-br from-purple-500/15 to-pink-500/10 rounded-full blur-3xl animate-float-slow animation-delay-2000"></div>
+
+            {/* Floating Orbs Layer 2 - Medium */}
+            <div className="absolute top-1/4 right-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-emerald-500/12 to-teal-500/8 rounded-full blur-2xl animate-float-medium animation-delay-4000"></div>
+            <div className="absolute bottom-1/4 left-[-10rem] w-[35rem] h-[35rem] bg-gradient-to-br from-orange-500/12 to-red-500/8 rounded-full blur-2xl animate-float-medium animation-delay-6000"></div>
+
+            {/* Floating Orbs Layer 3 - Small */}
+            <div className="absolute top-1/2 left-1/4 w-[20rem] h-[20rem] bg-gradient-to-br from-violet-500/10 to-indigo-500/6 rounded-full blur-xl animate-float-fast animation-delay-1000"></div>
+            <div className="absolute bottom-1/3 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-br from-lime-500/10 to-green-500/6 rounded-full blur-xl animate-float-fast animation-delay-3000"></div>
+
+            {/* Particle Stars */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-1/4 left-1/5 w-2 h-2 bg-cyan-400 rounded-full animate-twinkle animation-delay-500"></div>
+                <div className="absolute top-1/3 right-1/5 w-1 h-1 bg-purple-400 rounded-full animate-twinkle animation-delay-1500"></div>
+                <div className="absolute bottom-1/4 left-1/3 w-1.5 h-1.5 bg-pink-400 rounded-full animate-twinkle animation-delay-2500"></div>
+                <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-twinkle animation-delay-3500"></div>
+                <div className="absolute top-2/3 left-2/3 w-2 h-2 bg-orange-400 rounded-full animate-twinkle animation-delay-4500"></div>
+                <div className="absolute top-1/6 right-2/3 w-1 h-1 bg-blue-400 rounded-full animate-twinkle animation-delay-5500"></div>
+            </div>
+
+            {/* Gradient Overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-transparent to-slate-900/50 pointer-events-none"></div>
+
+            <nav className="sticky top-0 p-4 bg-slate-900/80 md:backdrop-blur-lg z-20 border-b border-slate-800">
+                <div className="container mx-auto flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        {page !== 'home' && (
+                            <button onClick={() => setPage('home')} className="text-white p-1 rounded-full hover:bg-slate-700"><BackArrowIcon className="w-6 h-6" /></button>
+                        )}
+                        <div onClick={() => setPage('home')} className="text-2xl font-bold text-white cursor-pointer">SIH <span className="text-cyan-400">LNCTU</span></div>
+                    </div>
+
+                    <div className="hidden md:flex space-x-2">
+                        {['home', 'registered'].map(p => (
+                            <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'registered' ? 'Registered' : 'Home'}</button>
+                        ))}
+                        <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                            Teams
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
+                        </button>
+                        <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                            Individuals
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
+                        </button>
+                    </div>
+
+                    <div className="md:hidden">
+                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                
-                <div className="hidden md:flex space-x-2">
+            </nav>
+
+            <div className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
+                <div className="flex flex-col items-center justify-center h-full space-y-8">
                     {['home', 'registered'].map(p => (
-                        <button key={p} onClick={() => handleNav(p)} className={`capitalize px-4 py-2 rounded-md transition-colors ${page === p ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'}`}>{p === 'registered' ? 'Registered' : 'Home'}</button>
+                        <button key={p} onClick={() => { handleNav(p); setIsMenuOpen(false); }} className={`text-3xl capitalize font-bold transition-colors ${page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'}`}>
+                            {p === 'registered' ? 'Registered' : 'Home'}
+                        </button>
                     ))}
-                    <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                    <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
                         Teams
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
-                    </button>
-                    <button disabled className="capitalize px-4 py-2 rounded-md transition-colors cursor-not-allowed opacity-50 text-slate-500 relative">
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
+                    </div>
+                    <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
                         Individuals
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full text-[10px]">✕</span>
-                    </button>
-                </div>
-
-                <div className="md:hidden">
-                    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-                        </svg>
-                    </button>
+                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
+                    </div>
                 </div>
             </div>
-        </nav>
-        
-        <div className={`fixed top-0 left-0 w-full h-full bg-slate-900 z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:hidden`}>
-            <div className="flex flex-col items-center justify-center h-full space-y-8">
-                {['home', 'registered'].map(p => (
-                    <button key={p} onClick={() => { handleNav(p); setIsMenuOpen(false); }} className={`text-3xl capitalize font-bold transition-colors ${page === p ? 'text-cyan-400' : 'text-white hover:text-cyan-300'}`}>
-                        {p === 'registered' ? 'Registered' : 'Home'}
-                    </button>
-                ))}
-                <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
-                    Teams
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
+
+            <main className="container mx-auto flex-grow flex flex-col z-10">{renderPage()}</main>
+
+            <Footer />
+
+            <AlertModal message={alert.message} show={alert.show} onClose={closeAlert} />
+
+            {toast.show && (
+                <div className="fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg z-50">
+                    {toast.message}
                 </div>
-                <div className="text-3xl capitalize font-bold text-gray-500 opacity-50 line-through relative">
-                    Individuals
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm px-2 py-1 rounded-full">CLOSED</span>
-                </div>
-            </div>
-        </div>
-        
-        <main className="container mx-auto flex-grow flex flex-col z-10">{renderPage()}</main>
+            )}
 
-        <Footer />
-        
-        <AlertModal message={alert.message} show={alert.show} onClose={closeAlert} />
-
-        {toast.show && (
-            <div className="fixed bottom-5 right-5 bg-green-600 text-white py-3 px-6 rounded-lg shadow-lg z-50">
-                {toast.message}
-            </div>
-        )}
-
-        <style>{`
+            <style>{`
             .bg-grid-slate-800 { 
                 background-image: 
                     linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px), 
@@ -947,13 +948,13 @@ export default function App() {
             @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
             .animate-marquee { animation: marquee 20s linear infinite; }
         `}</style>
-    </div>
-  );
+        </div>
+    );
 }
 
 const Footer = () => (
-  <footer className="text-center py-6 bg-transparent text-slate-400 mt-auto z-10">
-    <p>Developed by Gautam Jaiswani & Vikas Singh</p>
-  </footer>
+    <footer className="text-center py-6 bg-transparent text-slate-400 mt-auto z-10">
+        <p>Developed by Gautam Jaiswani & Vikas Singh</p>
+    </footer>
 );
 

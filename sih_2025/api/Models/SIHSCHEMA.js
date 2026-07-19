@@ -8,8 +8,8 @@ const IndividualSchema = new Schema({
     branch: { type: String, required: true },
     skills: { type: [String], default: [] },
     otherSkills: { type: String, trim: true },
-    contactNumber: { type: String, required: true },
-    instagram: { type: String, required: true, trim: true },
+    contactNumber: { type: String, trim: true },
+    instagram: { type: String, trim: true },
     github: { type: String, trim: true },
     discord: { type: String, trim: true },
     hasDeployed: { type: Boolean, default: false },
@@ -48,7 +48,7 @@ const TeamSchema = new Schema({
         type: [MemberSchema],
         validate: [
             {
-                validator: function(arr) {
+                validator: function (arr) {
                     return arr.length <= 5;
                 },
                 message: 'A team can have a maximum of 5 members.'
@@ -65,10 +65,10 @@ const ResultSchema = new Schema({
     branch: { type: String, required: true }, // BCA, MCA, etc.
     college: { type: String, required: true, trim: true },
     problemStatement: { type: String, trim: true },
-    status: { 
-        type: String, 
-        enum: ['Selected', 'Not Selected', 'Pending'], 
-        default: 'Pending' 
+    status: {
+        type: String,
+        enum: ['Selected', 'Not Selected', 'Pending'],
+        default: 'Pending'
     },
     round: { type: String, default: 'Round 1' },
     score: { type: Number, default: 0 },
