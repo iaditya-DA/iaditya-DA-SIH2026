@@ -4,7 +4,7 @@ import SIHHomePage from '../Components/SIHHomePage.jsx';
 import SIHRegisteredPage from '../Components/SIHRegisteredPage.jsx';
 import TeamRegistration from './TeamRegistration.jsx';
 import { IndividualRegistration } from './Home.jsx';
-import RegistrationChoice from './RegistrationChoice.jsx';
+import RegistrationChoice from "./Registrationchoice.jsx";
 import { AuthProvider, useAuth } from '../AuthContext.jsx';
 import AuthPage from '../AuthPage.jsx';
 import FindTeammatesPage from '../FindTeammatesPage.jsx';
