@@ -10,7 +10,8 @@ import AuthPage from '../AuthPage.jsx';
 import FindTeammatesPage from '../FindTeammatesPage.jsx';
 import MyRequestsPage from '../MyRequestsPage.jsx';
 import ProfilePage from './ProfilePage.jsx';
-import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import AdminPage from '../AdminPage.jsx';
+import { collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
 const ResultsPage = () => {
@@ -72,7 +73,7 @@ const useSmoothScroll = () => {
 
 // SIH Fluid Navigation
 const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const NAV_ITEMS = [
     { label: 'HOME', pageKey: 'home', action: () => setPage('home') },
@@ -86,6 +87,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
       pageKey: user ? 'profile' : 'auth',
       action: () => setPage(user ? 'profile' : 'auth'),
     },
+    ...(isAdmin ? [{ label: 'ADMIN', pageKey: 'admin', action: () => setPage('admin') }] : []),
   ];
 
   const isActive = (pageKey) => {
@@ -190,6 +192,67 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
   );
 };
 
+// SIH-themed announcement banner — only ever rendered on the Home page.
+// Sits in normal document flow (NOT fixed/absolute), directly under the
+// fixed navbar, so it pushes the rest of the page content down instead of
+// overlapping it. Styled to feel like a live notification: orange/blue
+// brand gradient, a gently ringing bell, and a soft pulsing glow.
+const SIHAnnouncementBanner = ({ message, onClose }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="w-full overflow-hidden"
+    >
+      <div className="flex justify-center px-4 py-3">
+        <motion.div
+          animate={{
+            boxShadow: [
+              "0 0 0 0 rgba(249,115,22,0.45)",
+              "0 0 0 10px rgba(249,115,22,0)",
+            ],
+          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+          className="relative flex items-center gap-3 bg-gradient-to-r from-blue-900 via-blue-900 to-orange-500 text-white rounded-full py-2.5 pl-3 pr-3 shadow-lg border border-white/10 max-w-3xl w-full sm:w-auto"
+        >
+          {/* Ringing bell badge */}
+          <div className="relative flex-shrink-0">
+            <span className="absolute inset-0 rounded-full bg-orange-400 opacity-75 animate-ping" />
+            <motion.div
+              animate={{ rotate: [0, -18, 16, -12, 8, 0] }}
+              transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.2, ease: "easeInOut" }}
+              className="relative w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center"
+            >
+              <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+              </svg>
+            </motion.div>
+          </div>
+
+          <p className="text-xs sm:text-sm font-semibold tracking-wide uppercase text-center sm:text-left leading-snug">
+            {message}
+          </p>
+
+          {/* Dismiss / hide button */}
+          <motion.button
+            onClick={onClose}
+            aria-label="Dismiss announcement"
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.9 }}
+            className="flex-shrink-0 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors ml-1"
+          >
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </motion.button>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+};
+
 // Inner component: everything that needs useAuth() must be inside AuthProvider
 const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'individual-register'];// Pages that let a user *start* a fresh registration — once registered, these are off-limits;
 // editing an existing registration should happen from the profile page instead.
@@ -198,7 +261,7 @@ const REGISTERED_ONLY_PAGES = ['find-teammates', 'my-requests'];
 
 const SIHFluidWebsiteInner = () => {
   useSmoothScroll();
-  const { user, isRegistered, loading: authLoading } = useAuth();
+  const { user, isRegistered, isAdmin, loading: authLoading } = useAuth();
 
   const [page, setPage] = useState('home');
   const [teams, setTeams] = useState([]);
@@ -207,7 +270,19 @@ const SIHFluidWebsiteInner = () => {
   const [alert, setAlert] = useState({ show: false, message: '' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [siteAnnouncement, setSiteAnnouncement] = useState('');
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [dismissedAnnouncement, setDismissedAnnouncement] = useState('');
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'config'), (snap) => {
+      if (snap.exists()) {
+        setSiteAnnouncement(snap.data().announcement || '');
+        setRegistrationOpen(snap.data().registrationOpen !== false);
+      }
+    });
+    return unsub;
+  }, []);
   useEffect(() => {
     setIsLoading(true);
 
@@ -260,7 +335,13 @@ const SIHFluidWebsiteInner = () => {
       return;
     }
 
-    if (REGISTERED_ONLY_PAGES.includes(page)) {
+    if (REGISTRATION_ENTRY_PAGES.includes(page) && !registrationOpen) {
+      showAlert('Registration is currently closed.');
+      setPage('home');
+      return;
+    }
+
+    if (REGISTERED_ONLY_PAGES.includes(page) && !isAdmin) {
       if (!user) {
         showAlert('Please login first');
         setPage('auth');
@@ -289,8 +370,23 @@ const SIHFluidWebsiteInner = () => {
       {/* Navigation */}
       <SIHFluidNavigation page={page} setPage={setPage} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
-      {/* Content based on page — pt-24 compensates for fixed navbar height */}
-      <div className="pt-24">
+      {/* Announcement — only shows on the Home page, styled like a live SIH notification.
+          pt-20 clears the fixed navbar (h-20); the banner itself is in normal
+          flow so it pushes the hero content below it down, never overlapping it. */}
+      <div className="pt-20">
+        <AnimatePresence>
+          {siteAnnouncement && page === 'home' && siteAnnouncement !== dismissedAnnouncement && (
+            <SIHAnnouncementBanner
+              key="announcement"
+              message={siteAnnouncement}
+              onClose={() => setDismissedAnnouncement(siteAnnouncement)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Content based on page — pt-4 gives breathing room after the navbar/announcement area */}
+      <div className="pt-4">
         {page === 'home' ? (
           <SIHHomePage setPage={setPage} />
         ) : page === 'registration-choice' ? (
@@ -311,6 +407,8 @@ const SIHFluidWebsiteInner = () => {
           <MyRequestsPage setPage={setPage} showToast={showToast} showAlert={showAlert} />
         ) : page === 'profile' ? (
           <ProfilePage setPage={setPage} showToast={showToast} showAlert={showAlert} />
+        ) : page === 'admin' ? (
+          <AdminPage setPage={setPage} />
         ) : null}
       </div>
 

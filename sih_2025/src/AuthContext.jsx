@@ -4,10 +4,14 @@ import { watchAuthState, getAuthToken, db } from "./firebaseClient.js";
 
 const AuthContext = createContext(null);
 
+const ADMIN_EMAILS = ['admin@gmail.com'];
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isRegistered, setIsRegistered] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    const isAdmin = user ? ADMIN_EMAILS.includes(user.email) : false;
 
     const checkRegistration = async (firebaseUser) => {
         if (!firebaseUser) {
@@ -30,7 +34,7 @@ export function AuthProvider({ children }) {
     const refreshRegistration = () => checkRegistration(user);
 
     return (
-        <AuthContext.Provider value={{ user, loading, isRegistered, refreshRegistration, getAuthToken }}>
+        <AuthContext.Provider value={{ user, loading, isRegistered, isAdmin, refreshRegistration, getAuthToken }}>
             {children}
         </AuthContext.Provider>
     );
