@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, getDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 import { db } from './firebaseClient.js';
 import { useAuth } from './AuthContext.jsx';
 
@@ -38,6 +39,7 @@ export default function AdminPage({ setPage }) {
     const [expandedTeam, setExpandedTeam] = useState(null);
     const [search, setSearch] = useState('');
     const [deletingId, setDeletingId] = useState(null);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
         if (authLoading) return;
@@ -139,6 +141,22 @@ export default function AdminPage({ setPage }) {
             alert('Failed to delete user.');
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleLogout = async () => {
+        const confirmed = window.confirm('Are you sure you want to log out?');
+        if (!confirmed) return;
+
+        try {
+            setLoggingOut(true);
+            await signOut(getAuth());
+            setPage('home');
+        } catch (err) {
+            console.error('Failed to log out:', err);
+            alert('Failed to log out. Please try again.');
+        } finally {
+            setLoggingOut(false);
         }
     };
 
@@ -248,9 +266,24 @@ export default function AdminPage({ setPage }) {
             <div className="max-w-7xl mx-auto">
 
                 {/* Header */}
-                <div className="mb-8">
-                    <span className="inline-block text-xs font-bold tracking-widest text-orange-500 uppercase mb-1">Control Center</span>
-                    <h1 className="text-4xl font-black text-blue-900">Admin Panel</h1>
+                <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+                    <div>
+                        <span className="inline-block text-xs font-bold tracking-widest text-orange-500 uppercase mb-1">Control Center</span>
+                        <h1 className="text-4xl font-black text-blue-900">Admin Panel</h1>
+                    </div>
+
+                    <motion.button
+                        onClick={handleLogout}
+                        disabled={loggingOut}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="inline-flex items-center gap-2 bg-white border-2 border-red-200 text-red-600 hover:bg-red-500 hover:text-white hover:border-red-500 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors disabled:opacity-60 shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        {loggingOut ? 'Logging out…' : 'Logout'}
+                    </motion.button>
                 </div>
 
                 {/* Stat cards */}
@@ -288,8 +321,8 @@ export default function AdminPage({ setPage }) {
                     <button
                         onClick={toggleRegistration}
                         className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${settings.registrationOpen
-                                ? 'bg-red-500 hover:bg-red-600 text-white'
-                                : 'bg-green-500 hover:bg-green-600 text-white'
+                            ? 'bg-red-500 hover:bg-red-600 text-white'
+                            : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
                     >
                         {settings.registrationOpen ? 'Close Registration' : 'Open Registration'}
@@ -303,8 +336,8 @@ export default function AdminPage({ setPage }) {
                             key={t.key}
                             onClick={() => setTab(t.key)}
                             className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${tab === t.key
-                                    ? 'bg-blue-900 text-white shadow-sm'
-                                    : 'text-slate-500 hover:bg-gray-50'
+                                ? 'bg-blue-900 text-white shadow-sm'
+                                : 'text-slate-500 hover:bg-gray-50'
                                 }`}
                         >
                             {t.label}
