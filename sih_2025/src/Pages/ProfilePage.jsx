@@ -1,15 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
     Pencil,
     Link2,
     AtSign,
     Phone,
+    Mail,
     LogOut,
     CheckCircle2,
     Clock,
     X,
-    Save
+    Save,
+    UserPlus,
+    Users,
+    GraduationCap,
+    Landmark,
+    Sparkles,
+    ShieldCheck,
+    FileText,
+    Code2,
+    Server,
+    Brain,
+    Smartphone,
+    Globe,
+    PenTool,
+    ClipboardList,
+    MessageSquare,
+    MonitorPlay,
+    Cloud,
+    Blocks
 } from 'lucide-react';
 import { useAuth } from '../AuthContext.jsx';
 import { logout, getCurrentUserProfile } from '../firebaseClient.js';
@@ -26,6 +44,86 @@ import {
 import { auth, db } from '../firebaseClient.js';
 
 const SKILLS_LIST = ['Frontend', 'Backend', 'AI/ML', 'App Development', 'Web Development', 'UI/UX Design', 'Project Management', 'Communication', 'Presentation', 'Cloud Computing', 'Cybersecurity', 'Blockchain'];
+
+const SKILL_ICONS = {
+    'Frontend': Code2,
+    'Backend': Server,
+    'AI/ML': Brain,
+    'App Development': Smartphone,
+    'Web Development': Globe,
+    'UI/UX Design': PenTool,
+    'Project Management': ClipboardList,
+    'Communication': MessageSquare,
+    'Presentation': MonitorPlay,
+    'Cloud Computing': Cloud,
+    'Cybersecurity': ShieldCheck,
+    'Blockchain': Blocks,
+};
+
+// ---- Shared bits so both cards stay visually identical ----
+
+function PrimaryButton({ children, className = '', ...rest }) {
+    return (
+        <button
+            {...rest}
+            className={`inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold px-5 py-2.5 rounded-full shadow-sm shadow-indigo-200 transition-colors ${className}`}
+        >
+            {children}
+        </button>
+    );
+}
+
+function OutlineButton({ children, className = '', ...rest }) {
+    return (
+        <button
+            {...rest}
+            className={`inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 border border-indigo-200 bg-white px-4 py-2 rounded-full hover:bg-indigo-50 transition-colors whitespace-nowrap ${className}`}
+        >
+            {children}
+        </button>
+    );
+}
+
+function GhostInput(props) {
+    return (
+        <input
+            {...props}
+            className={`w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 ${props.className || ''}`}
+        />
+    );
+}
+
+function StatTile({ label, value, icon: Icon }) {
+    return (
+        <div className="bg-indigo-50/60 rounded-xl px-4 py-3 flex items-center gap-3">
+            {Icon && (
+                <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                    <Icon size={16} />
+                </div>
+            )}
+            <div className="min-w-0">
+                <p className="text-xs text-slate-400">{label}</p>
+                <p className="text-sm font-bold text-blue-900 break-all">{value || '—'}</p>
+            </div>
+        </div>
+    );
+}
+
+// Decorative background: soft blobs + dotted corners, purely visual
+function Decor() {
+    const dotStyle = {
+        backgroundImage: 'radial-gradient(circle, #c7c7e8 1.4px, transparent 1.4px)',
+        backgroundSize: '16px 16px',
+    };
+    return (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-200 rounded-full blur-3xl opacity-30" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-40" />
+            <div className="absolute top-6 left-6 w-24 h-24 opacity-60 hidden sm:block" style={dotStyle} />
+            <div className="absolute bottom-6 right-6 w-24 h-24 opacity-60 hidden sm:block" style={dotStyle} />
+        </div>
+    );
+}
 
 export default function ProfilePage({ setPage, showToast, showAlert }) {
     const { user, loading: authLoading } = useAuth();
@@ -145,9 +243,7 @@ export default function ProfilePage({ setPage, showToast, showAlert }) {
 
         try {
             const batch = writeBatch(db);
-            // Remove member from the team doc
             batch.update(doc(db, 'teams', myTeam.id), { members: newMembers });
-            // Free up the removed member so they show up again in Find Teammates
             if (member.uid) {
                 batch.update(doc(db, 'users', member.uid), { teamId: null });
             }
@@ -183,9 +279,9 @@ export default function ProfilePage({ setPage, showToast, showAlert }) {
 
     if (authLoading || loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-blue-50">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-10 h-10 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin"></div>
                     <p className="text-blue-900/60 text-sm font-medium">Loading your dashboard…</p>
                 </div>
             </div>
@@ -194,369 +290,332 @@ export default function ProfilePage({ setPage, showToast, showAlert }) {
 
     if (!profile) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-blue-50">
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <p className="text-slate-500 text-lg">Profile not found.</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 px-4 py-16">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="relative min-h-screen bg-slate-50 overflow-hidden px-4 py-14">
+            <Decor />
 
-                {/* ============ LEFT: PROFILE CARD ============ */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
-                    <h1 className="text-4xl font-black text-orange-500 uppercase tracking-wide text-center mb-1">
-                        Participant Profile
+            <div className="relative max-w-5xl mx-auto">
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-2">
+                        My Profile
                     </h1>
-                    <p className="text-blue-900 text-sm font-semibold text-center mb-5">
-                        Smart India Hackathon 2026
-                    </p>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                        <div className="w-10 h-0.5 bg-indigo-300 rounded-full" />
+                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full" />
+                    </div>
+                    <p className="text-slate-500 text-sm">Smart India Hackathon 2026</p>
+                </div>
 
-                    <div className="relative bg-orange-50 rounded-3xl border-2 border-orange-400 overflow-hidden">
-                        <div className="flex justify-center pt-8">
-                            <div className="w-20 h-20 rounded-full border-2 border-orange-400 bg-white text-blue-900 flex items-center justify-center text-3xl font-bold">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* ============ LEFT: PROFILE CARD ============ */}
+                    <div className="bg-white rounded-3xl border-2 border-indigo-100 shadow-xl shadow-slate-200/60 p-7 flex flex-col h-full">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-14 h-14 rounded-full border-2 border-orange-400 bg-orange-50 text-blue-900 flex items-center justify-center text-2xl font-bold shrink-0">
                                 {profile.name?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
-                        </div>
-
-                        <div className="p-8 pt-4">
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="min-w-0 flex-1">
+                                <p className="font-bold text-blue-900 text-lg truncate">{profile.name || 'Unnamed'}</p>
                                 <span
-                                    className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide border-2 ${profile.registered
-                                        ? 'bg-green-50 text-green-700 border-green-400'
-                                        : 'bg-orange-50 text-orange-700 border-orange-400'
+                                    className={`inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${profile.registered
+                                        ? 'bg-green-50 text-green-700'
+                                        : 'bg-orange-50 text-orange-600'
                                         }`}
                                 >
-                                    {profile.registered ? <CheckCircle2 size={14} /> : <Clock size={14} />}
-                                    {profile.registered ? 'Registration Complete' : 'Registration Pending'}
+                                    {profile.registered ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                                    {profile.registered ? 'Registered' : 'Pending'}
                                 </span>
-
-                                {!editingProfile && (
-                                    <button
-                                        onClick={() => setEditingProfile(true)}
-                                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-900 border-2 border-orange-300 px-4 py-1.5 rounded-full hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors"
-                                    >
-                                        <Pencil size={14} /> Edit
-                                    </button>
-                                )}
                             </div>
+                            {!editingProfile && (
+                                <OutlineButton onClick={() => setEditingProfile(true)}>
+                                    <Pencil size={13} /> Edit Profile
+                                </OutlineButton>
+                            )}
+                        </div>
 
-                            {!editingProfile ? (
-                                <>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 border-t border-b border-dashed border-orange-200 py-6">
-                                        <div>
-                                            <p className="text-xs font-semibold text-slate-400 uppercase">Name</p>
-                                            <p className="font-semibold text-blue-900 text-lg">{profile.name || '—'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold text-slate-400 uppercase">Email</p>
-                                            <p className="font-semibold text-blue-900 text-lg break-all">{profile.email || '—'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold text-slate-400 uppercase">Year</p>
-                                            <p className="font-semibold text-blue-900 text-lg">{profile.year || '—'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-semibold text-slate-400 uppercase">Branch</p>
-                                            <p className="font-semibold text-blue-900 text-lg">{profile.branch || '—'}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Phone size={14} className="text-orange-400 mt-3" />
-                                            <div>
-                                                <p className="text-xs font-semibold text-slate-400 uppercase">Contact</p>
-                                                <p className="font-semibold text-blue-900 text-lg">{profile.contactNumber || '—'}</p>
-                                            </div>
-                                        </div>
-                                        {profile.github && (
-                                            <div className="flex items-center gap-2">
-                                                <Link2 size={14} className="text-orange-400 mt-3" />
-                                                <div>
-                                                    <p className="text-xs font-semibold text-slate-400 uppercase">GitHub</p>
-                                                    <p className="font-semibold text-blue-900 text-lg break-all">{profile.github}</p>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {profile.instagram && (
-                                            <div className="flex items-center gap-2">
-                                                <AtSign size={14} className="text-orange-400 mt-3" />
-                                                <div>
-                                                    <p className="text-xs font-semibold text-slate-400 uppercase">Instagram</p>
-                                                    <p className="font-semibold text-blue-900 text-lg break-all">{profile.instagram}</p>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
+                        {!editingProfile ? (
+                            <>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    <StatTile label="Email" value={profile.email} icon={Mail} />
+                                    <StatTile label="Year" value={profile.year} icon={GraduationCap} />
+                                    <StatTile label="Branch" value={profile.branch} icon={Landmark} />
+                                    <StatTile label="Contact" value={profile.contactNumber} icon={Phone} />
+                                    {profile.github && <StatTile label="GitHub" value={profile.github} icon={Link2} />}
+                                    {profile.instagram && <StatTile label="Instagram" value={profile.instagram} icon={AtSign} />}
+                                </div>
 
-                                    <div className="mt-6">
-                                        <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Skills</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {(profile.skills || []).length > 0 ? (
-                                                profile.skills.map((skill, i) => (
-                                                    <span key={i} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium border border-orange-200 hover:bg-orange-100 transition-colors">
+                                <div className="mt-6">
+                                    <p className="flex items-center gap-1.5 text-sm font-semibold text-blue-900 mb-2.5">
+                                        <Sparkles size={14} className="text-indigo-400" /> Skills
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(profile.skills || []).length > 0 ? (
+                                            profile.skills.map((skill, i) => {
+                                                const SkillIcon = SKILL_ICONS[skill];
+                                                return (
+                                                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-medium">
+                                                        {SkillIcon && <SkillIcon size={12} />}
                                                         {skill}
                                                     </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-slate-400">No skills added</span>
-                                            )}
-                                        </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <span className="text-sm text-slate-400">No skills added</span>
+                                        )}
                                     </div>
-                                </>
-                            ) : (
-                                <div className="space-y-4 border-t border-dashed border-orange-200 pt-6">
-                                    <input
-                                        type="text"
-                                        placeholder="Name"
-                                        value={profileForm.name || ''}
-                                        onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                    />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="text"
-                                            placeholder="Year"
-                                            value={profileForm.year || ''}
-                                            onChange={(e) => setProfileForm(prev => ({ ...prev, year: e.target.value }))}
-                                            className="border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Branch"
-                                            value={profileForm.branch || ''}
-                                            onChange={(e) => setProfileForm(prev => ({ ...prev, branch: e.target.value }))}
-                                            className="border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-                                    </div>
-                                    <input
-                                        type="tel"
-                                        placeholder="Contact Number"
-                                        value={profileForm.contactNumber || ''}
-                                        onChange={(e) => setProfileForm(prev => ({ ...prev, contactNumber: e.target.value }))}
-                                        className="w-full border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                    />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="text"
-                                            placeholder="GitHub (optional)"
-                                            value={profileForm.github || ''}
-                                            onChange={(e) => setProfileForm(prev => ({ ...prev, github: e.target.value }))}
-                                            className="border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Instagram (optional)"
-                                            value={profileForm.instagram || ''}
-                                            onChange={(e) => setProfileForm(prev => ({ ...prev, instagram: e.target.value }))}
-                                            className="border border-orange-200 rounded-2xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-                                    </div>
+                                </div>
 
-                                    <div>
-                                        <p className="text-sm font-semibold text-slate-700 mb-2">Skills</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {SKILLS_LIST.map(skill => (
+                                <div className="flex-1" />
+                            </>
+                        ) : (
+                            <div className="space-y-3">
+                                <GhostInput
+                                    type="text"
+                                    placeholder="Name"
+                                    value={profileForm.name || ''}
+                                    onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <GhostInput
+                                        type="text"
+                                        placeholder="Year"
+                                        value={profileForm.year || ''}
+                                        onChange={(e) => setProfileForm(prev => ({ ...prev, year: e.target.value }))}
+                                    />
+                                    <GhostInput
+                                        type="text"
+                                        placeholder="Branch"
+                                        value={profileForm.branch || ''}
+                                        onChange={(e) => setProfileForm(prev => ({ ...prev, branch: e.target.value }))}
+                                    />
+                                </div>
+                                <GhostInput
+                                    type="tel"
+                                    placeholder="Contact Number"
+                                    value={profileForm.contactNumber || ''}
+                                    onChange={(e) => setProfileForm(prev => ({ ...prev, contactNumber: e.target.value }))}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <GhostInput
+                                        type="text"
+                                        placeholder="GitHub (optional)"
+                                        value={profileForm.github || ''}
+                                        onChange={(e) => setProfileForm(prev => ({ ...prev, github: e.target.value }))}
+                                    />
+                                    <GhostInput
+                                        type="text"
+                                        placeholder="Instagram (optional)"
+                                        value={profileForm.instagram || ''}
+                                        onChange={(e) => setProfileForm(prev => ({ ...prev, instagram: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="pt-1">
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Skills</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {SKILLS_LIST.map(skill => {
+                                            const SkillIcon = SKILL_ICONS[skill];
+                                            const active = (profileForm.skills || []).includes(skill);
+                                            return (
                                                 <button
                                                     key={skill}
                                                     type="button"
                                                     onClick={() => toggleSkill(skill)}
-                                                    className={`px-3 py-1.5 text-sm rounded-full transition-all ${(profileForm.skills || []).includes(skill)
-                                                        ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white font-bold shadow-sm shadow-orange-300'
-                                                        : 'bg-orange-50 border border-orange-200 text-slate-700 hover:bg-orange-100'
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${active
+                                                        ? 'bg-orange-500 text-white'
+                                                        : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
                                                         }`}
                                                 >
-                                                    {skill}
+                                                    <SkillIcon size={12} /> {skill}
                                                 </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 pt-2">
-                                        <button
-                                            onClick={saveProfile}
-                                            disabled={savingProfile}
-                                            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 disabled:opacity-60 text-white py-3 rounded-2xl font-semibold shadow-sm"
-                                        >
-                                            <Save size={16} /> {savingProfile ? 'Saving...' : 'Save Changes'}
-                                        </button>
-                                        <button
-                                            onClick={() => { setEditingProfile(false); setProfileForm(profile); }}
-                                            className="flex-1 inline-flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-slate-700 py-3 rounded-2xl font-semibold border border-orange-200"
-                                        >
-                                            <X size={16} /> Cancel
-                                        </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            )}
 
-                            <button
-                                onClick={handleLogout}
-                                className="w-full mt-8 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white py-3 rounded-2xl font-semibold uppercase tracking-wide transition-colors"
-                            >
-                                <LogOut size={16} /> Log Out
-                            </button>
-                        </div>
+                                <div className="flex gap-3 pt-3">
+                                    <PrimaryButton className="flex-1" onClick={saveProfile} disabled={savingProfile}>
+                                        <Save size={15} /> {savingProfile ? 'Saving…' : 'Save Changes'}
+                                    </PrimaryButton>
+                                    <OutlineButton
+                                        className="flex-1"
+                                        onClick={() => { setEditingProfile(false); setProfileForm(profile); }}
+                                    >
+                                        <X size={15} /> Cancel
+                                    </OutlineButton>
+                                </div>
+
+                                <div className="flex-1" />
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleLogout}
+                            className="w-full mt-6 inline-flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold text-sm tracking-wide shadow-sm shadow-red-200 hover:shadow-md hover:shadow-red-200 transition-all"
+                        >
+                            <LogOut size={16} /> Log Out
+                        </button>
                     </div>
-                </motion.div>
 
-                {/* ============ RIGHT: TEAM CARD ============ */}
-                {myTeam ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <h1 className="text-4xl font-black text-orange-500 uppercase tracking-wide text-center mb-1">
-                            My Team
-                        </h1>
-                        <p className="text-blue-900 text-sm font-semibold text-center mb-5">
-                            {isLeader ? 'You are the Team Leader' : 'Team Member'}
-                        </p>
-
-                        <div className="relative bg-orange-50 rounded-3xl border-2 border-orange-400 overflow-hidden">
-                            <div className="p-8">
-                                <div className="flex justify-end mb-4">
-                                    {isLeader && !editingTeam && (
-                                        <button
-                                            onClick={() => setEditingTeam(true)}
-                                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-900 border-2 border-orange-300 px-4 py-1.5 rounded-full hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors"
-                                        >
-                                            <Pencil size={14} /> Edit Team
-                                        </button>
-                                    )}
+                    {/* ============ RIGHT: TEAM CARD ============ */}
+                    {myTeam ? (
+                        <div className="bg-white rounded-3xl border-2 border-indigo-100 shadow-xl shadow-slate-200/60 p-7 flex flex-col h-full">
+                            <div className="flex items-start justify-between mb-6 gap-3">
+                                <div className="min-w-0">
+                                    <p className="flex items-center gap-2 font-bold text-blue-900 text-lg truncate">
+                                        {myTeam.teamName}
+                                        <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                            <ShieldCheck size={13} />
+                                        </span>
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-0.5">{isLeader ? 'You are the Team Leader' : 'Team Member'}</p>
                                 </div>
-
-                                {!editingTeam ? (
-                                    <>
-                                        <p className="text-xs font-semibold text-slate-400 uppercase">Team Name</p>
-                                        <p className="font-semibold text-blue-900 text-xl mb-4">{myTeam.teamName}</p>
-
-                                        {myTeam.problemStatement && (
-                                            <>
-                                                <p className="text-xs font-semibold text-slate-400 uppercase">Problem Statement</p>
-                                                <p className="text-slate-700 mb-4">{myTeam.problemStatement}</p>
-                                            </>
-                                        )}
-
-                                        <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Team Leader</p>
-                                        <div className="bg-white border border-orange-200 rounded-2xl px-4 py-2 mb-4">
-                                            <p className="font-semibold text-blue-900">{myTeam.leader?.name}</p>
-                                            <p className="text-sm text-slate-500">{myTeam.leader?.branch} — {myTeam.leader?.year}</p>
-                                        </div>
-
-                                        <p className="text-xs font-semibold text-slate-400 uppercase mb-2">
-                                            Members ({(myTeam.members || []).length})
-                                        </p>
-                                        <div className="space-y-2">
-                                            {(myTeam.members || []).length > 0 ? (
-                                                myTeam.members.map((m, i) => (
-                                                    <div key={i} className="bg-white border border-orange-100 rounded-2xl px-4 py-2 hover:bg-orange-100/40 transition-colors">
-                                                        <p className="font-semibold text-blue-900">{m.name}</p>
-                                                        <p className="text-sm text-slate-500">{m.branch} — {m.year}</p>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-sm text-slate-400">No members yet.</p>
-                                            )}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <input
-                                            type="text"
-                                            placeholder="Team Name"
-                                            value={teamForm.teamName || ''}
-                                            onChange={(e) => setTeamForm(prev => ({ ...prev, teamName: e.target.value }))}
-                                            className="w-full border border-orange-200 rounded-2xl px-4 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-                                        <textarea
-                                            placeholder="Problem Statement"
-                                            value={teamForm.problemStatement || ''}
-                                            onChange={(e) => setTeamForm(prev => ({ ...prev, problemStatement: e.target.value }))}
-                                            className="w-full border border-orange-200 rounded-2xl px-4 py-2 h-24 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                        />
-
-                                        <p className="text-sm font-semibold text-slate-700">Members</p>
-                                        {(teamForm.members || []).map((m, i) => (
-                                            <div key={i} className="border border-orange-100 bg-orange-50/40 rounded-2xl p-3 space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Name"
-                                                        value={m.name || ''}
-                                                        onChange={(e) => updateTeamMember(i, 'name', e.target.value)}
-                                                        className="min-w-0 flex-1 border border-orange-200 rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                                    />
-                                                    <button
-                                                        onClick={() => removeTeamMember(i)}
-                                                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                                                        title="Remove member"
-                                                    >
-                                                        <X size={16} />
-                                                    </button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Year"
-                                                        value={m.year || ''}
-                                                        onChange={(e) => updateTeamMember(i, 'year', e.target.value)}
-                                                        className="min-w-0 border border-orange-200 rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Branch"
-                                                        value={m.branch || ''}
-                                                        onChange={(e) => updateTeamMember(i, 'branch', e.target.value)}
-                                                        className="min-w-0 border border-orange-200 rounded-2xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-
-                                        <div className="flex gap-3 pt-2">
-                                            <button
-                                                onClick={saveTeam}
-                                                disabled={savingTeam}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 disabled:opacity-60 text-white py-3 rounded-2xl font-semibold shadow-sm"
-                                            >
-                                                <Save size={16} /> {savingTeam ? 'Saving...' : 'Save Team'}
-                                            </button>
-                                            <button
-                                                onClick={() => { setEditingTeam(false); setTeamForm(myTeam); }}
-                                                className="flex-1 inline-flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-slate-700 py-3 rounded-2xl font-semibold border border-orange-200"
-                                            >
-                                                <X size={16} /> Cancel
-                                            </button>
-                                        </div>
+                                {isLeader && !editingTeam && (
+                                    <div className="flex gap-2 shrink-0">
+                                        <OutlineButton onClick={() => setPage && setPage('find-teammates')}>
+                                            <UserPlus size={13} /> Invite
+                                        </OutlineButton>
+                                        <PrimaryButton onClick={() => setEditingTeam(true)}>
+                                            <Pencil size={13} /> Edit Team
+                                        </PrimaryButton>
                                     </div>
                                 )}
                             </div>
+
+                            {!editingTeam ? (
+                                <>
+                                    {myTeam.problemStatement && (
+                                        <StatTile label="Problem Statement" value={myTeam.problemStatement} icon={FileText} />
+                                    )}
+
+                                    <p className="text-xs font-medium text-slate-400 mt-5 mb-2">Team Leader</p>
+                                    <div className="flex items-center justify-between bg-orange-50 rounded-xl px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-orange-400 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                                {myTeam.leader?.name?.charAt(0)?.toUpperCase() || '?'}
+                                            </div>
+                                            <p className="font-semibold text-blue-900 text-sm">{myTeam.leader?.name}</p>
+                                        </div>
+                                        <p className="text-xs text-slate-500">{myTeam.leader?.branch} — {myTeam.leader?.year}</p>
+                                    </div>
+
+                                    <p className="text-xs font-medium text-slate-400 mt-5 mb-2">
+                                        Members ({(myTeam.members || []).length})
+                                    </p>
+                                    {(myTeam.members || []).length > 0 ? (
+                                        <div className="space-y-2">
+                                            {myTeam.members.map((m, i) => (
+                                                <div key={i} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3">
+                                                    <p className="font-semibold text-blue-900 text-sm">{m.name}</p>
+                                                    <p className="text-xs text-slate-500">{m.branch} — {m.year}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-indigo-200 bg-indigo-50/20 rounded-2xl py-10 text-center">
+                                            <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center mb-3">
+                                                <Users size={22} />
+                                            </div>
+                                            <p className="font-bold text-blue-900">No members yet</p>
+                                            <p className="text-sm text-slate-400 mt-1">Invite your first teammate and get started!</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1" />
+                                </>
+                            ) : (
+                                <div className="space-y-3">
+                                    <GhostInput
+                                        type="text"
+                                        placeholder="Team Name"
+                                        value={teamForm.teamName || ''}
+                                        onChange={(e) => setTeamForm(prev => ({ ...prev, teamName: e.target.value }))}
+                                        className="font-semibold"
+                                    />
+                                    <textarea
+                                        placeholder="Problem Statement"
+                                        value={teamForm.problemStatement || ''}
+                                        onChange={(e) => setTeamForm(prev => ({ ...prev, problemStatement: e.target.value }))}
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+                                    />
+
+                                    <p className="text-sm font-semibold text-slate-700 pt-1">Members</p>
+                                    {(teamForm.members || []).map((m, i) => (
+                                        <div key={i} className="bg-slate-50 rounded-xl p-3 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <GhostInput
+                                                    type="text"
+                                                    placeholder="Name"
+                                                    value={m.name || ''}
+                                                    onChange={(e) => updateTeamMember(i, 'name', e.target.value)}
+                                                    className="min-w-0 flex-1 bg-white"
+                                                />
+                                                <button
+                                                    onClick={() => removeTeamMember(i)}
+                                                    className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                                                    title="Remove member"
+                                                >
+                                                    <X size={15} />
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <GhostInput
+                                                    type="text"
+                                                    placeholder="Year"
+                                                    value={m.year || ''}
+                                                    onChange={(e) => updateTeamMember(i, 'year', e.target.value)}
+                                                    className="bg-white"
+                                                />
+                                                <GhostInput
+                                                    type="text"
+                                                    placeholder="Branch"
+                                                    value={m.branch || ''}
+                                                    onChange={(e) => updateTeamMember(i, 'branch', e.target.value)}
+                                                    className="bg-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <div className="flex gap-3 pt-3">
+                                        <PrimaryButton className="flex-1" onClick={saveTeam} disabled={savingTeam}>
+                                            <Save size={15} /> {savingTeam ? 'Saving…' : 'Save Team'}
+                                        </PrimaryButton>
+                                        <OutlineButton
+                                            className="flex-1"
+                                            onClick={() => { setEditingTeam(false); setTeamForm(myTeam); }}
+                                        >
+                                            <X size={15} /> Cancel
+                                        </OutlineButton>
+                                    </div>
+
+                                    <div className="flex-1" />
+                                </div>
+                            )}
                         </div>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <h1 className="text-4xl font-black text-orange-500 uppercase tracking-wide text-center mb-1">
-                            My Team
-                        </h1>
-                        <p className="text-blue-900 text-sm font-semibold text-center mb-5">
-                            No team yet
-                        </p>
-                        <div className="relative bg-orange-50 rounded-3xl border-2 border-orange-400 overflow-hidden flex items-center justify-center p-12 text-center">
-                            <div>
-                                <h2 className="text-xl font-bold text-blue-900 mb-2">No Team Yet</h2>
-                                <p className="text-slate-500">
-                                    You haven't joined or created a team yet. Check "Find Teammates" or register a team.
-                                </p>
+                    ) : (
+                        <div className="bg-white rounded-3xl border-2 border-indigo-100 shadow-xl shadow-slate-200/60 p-7 flex flex-col h-full items-center justify-center text-center">
+                            <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center mb-3">
+                                <Users size={22} />
                             </div>
+                            <p className="font-bold text-blue-900 text-lg mb-1.5">No Team Yet</p>
+                            <p className="text-slate-500 text-sm max-w-xs">
+                                You haven't joined or created a team yet. Check "Find Teammates" or register a team.
+                            </p>
                         </div>
-                    </motion.div>
-                )}
+                    )}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 mt-8 text-xs text-slate-400">
+                    <ShieldCheck size={13} className="text-indigo-300" />
+                    <span>Smart India Hackathon 2026 &nbsp;•&nbsp; Build &nbsp;•&nbsp; Innovate &nbsp;•&nbsp; Impact</span>
+                </div>
             </div>
         </div>
     );

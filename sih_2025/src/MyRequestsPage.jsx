@@ -4,7 +4,7 @@ import {
     collection,
     query,
     where,
-    getDocs,
+    onSnapshot,
     doc,
     getDoc,
     updateDoc,
@@ -15,85 +15,144 @@ import { auth, db } from './firebaseClient.js';
 const MAX_TEAM_SIZE = 6;
 
 export default function MyRequestsPage({ showToast, showAlert }) {
-    const [incoming, setIncoming] = useState([]);
-    const [sent, setSent] = useState([]);
+    const [incomingJoinRequests, setIncomingJoinRequests] = useState([]);
+    const [invitesReceived, setInvitesReceived] = useState([]);
+    const [sentRequests, setSentRequests] = useState([]);
+    const [invitesSent, setInvitesSent] = useState([]);
     const [myTeam, setMyTeam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actingOn, setActingOn] = useState(null);
 
-    const loadRequests = async () => {
-        try {
-            const currentUser = auth.currentUser;
-            if (!currentUser) {
-                showAlert && showAlert('Please login first');
-                return;
-            }
-            const uid = currentUser.uid;
+    useEffect(() => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            showAlert && showAlert('Please login first');
+            setLoading(false);
+            return;
+        }
+        const uid = currentUser.uid;
 
-            const teamQuery = query(collection(db, 'teams'), where('leader.uid', '==', uid));
-            const teamSnap = await getDocs(teamQuery);
+        let unsubIncoming = null;
+        let unsubInvitesSent = null;
+        let pending = 3; // teamQuery, invitesReceived, sent — decremented as each resolves once
+
+        const markLoaded = () => {
+            pending = Math.max(0, pending - 1);
+            if (pending === 0) setLoading(false);
+        };
+
+        // ---- Team leadership listener (drives incoming + invitesSent) ----
+        const teamQuery = query(collection(db, 'teams'), where('leader.uid', '==', uid));
+        const unsubTeam = onSnapshot(teamQuery, (teamSnap) => {
             const teamDoc = teamSnap.docs[0] ? { id: teamSnap.docs[0].id, ...teamSnap.docs[0].data() } : null;
             setMyTeam(teamDoc);
+
+            if (unsubIncoming) { unsubIncoming(); unsubIncoming = null; }
+            if (unsubInvitesSent) { unsubInvitesSent(); unsubInvitesSent = null; }
 
             if (teamDoc) {
                 const incomingQuery = query(
                     collection(db, 'requests'),
-                    where('toTeamId', '==', teamDoc.id),
+                    where('teamId', '==', teamDoc.id),
+                    where('initiatedBy', '==', 'individual'),
                     where('status', '==', 'pending')
                 );
-                const incomingSnap = await getDocs(incomingQuery);
-                setIncoming(incomingSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                unsubIncoming = onSnapshot(incomingQuery, (snap) => {
+                    setIncomingJoinRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                });
+
+                const invitesSentQuery = query(
+                    collection(db, 'requests'),
+                    where('teamId', '==', teamDoc.id),
+                    where('initiatedBy', '==', 'leader')
+                );
+                unsubInvitesSent = onSnapshot(invitesSentQuery, (snap) => {
+                    setInvitesSent(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                });
             } else {
-                setIncoming([]);
+                setIncomingJoinRequests([]);
+                setInvitesSent([]);
             }
 
-            const sentQuery = query(collection(db, 'requests'), where('fromUid', '==', uid));
-            const sentSnap = await getDocs(sentQuery);
-            setSent(sentSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+            markLoaded();
+        }, (err) => {
+            console.error('Failed to load team:', err);
+            markLoaded();
+        });
 
-        } catch (err) {
-            console.error('Failed to load requests:', err);
-            showAlert && showAlert('Failed to load requests.');
-        } finally {
-            setLoading(false);
-        }
-    };
+        // ---- Invites received ----
+        const invitesReceivedQuery = query(
+            collection(db, 'requests'),
+            where('individualUid', '==', uid),
+            where('initiatedBy', '==', 'leader'),
+            where('status', '==', 'pending')
+        );
+        const unsubInvitesReceived = onSnapshot(invitesReceivedQuery, (snap) => {
+            setInvitesReceived(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            markLoaded();
+        }, (err) => {
+            console.error('Failed to load invites:', err);
+            markLoaded();
+        });
+
+        // ---- Requests I sent ----
+        const sentQuery = query(
+            collection(db, 'requests'),
+            where('individualUid', '==', uid),
+            where('initiatedBy', '==', 'individual')
+        );
+        const unsubSent = onSnapshot(sentQuery, (snap) => {
+            setSentRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            markLoaded();
+        }, (err) => {
+            console.error('Failed to load sent requests:', err);
+            markLoaded();
+        });
+
+        return () => {
+            unsubTeam();
+            unsubInvitesReceived();
+            unsubSent();
+            if (unsubIncoming) unsubIncoming();
+            if (unsubInvitesSent) unsubInvitesSent();
+        };
+    }, []);
 
     const acceptRequest = async (req) => {
         try {
             setActingOn(req.id);
 
-            const teamRef = doc(db, 'teams', req.toTeamId);
+            const teamRef = doc(db, 'teams', req.teamId);
             const teamSnap = await getDoc(teamRef);
             const teamData = teamSnap.data();
             const currentSize = 1 + (teamData.members?.length || 0);
 
             if (currentSize >= MAX_TEAM_SIZE) {
-                showAlert && showAlert('Your team is already full.');
+                showAlert && showAlert('This team is already full.');
                 return;
             }
 
             await updateDoc(teamRef, {
                 members: arrayUnion({
-                    uid: req.fromUid,
-                    name: req.fromName,
-                    year: req.fromYear,
-                    branch: req.fromBranch,
-                    contactNumber: req.fromContactNumber || '',
-                    skills: req.fromSkills || [],
+                    uid: req.individualUid,
+                    name: req.individualName,
+                    year: req.individualYear,
+                    branch: req.individualBranch,
+                    contactNumber: req.individualContact || '',
+                    skills: req.individualSkills || [],
                 }),
             });
 
-            await updateDoc(doc(db, 'users', req.fromUid), {
-                teamId: req.toTeamId,
-            });
-
+            await updateDoc(doc(db, 'users', req.individualUid), { teamId: req.teamId });
             await updateDoc(doc(db, 'requests', req.id), { status: 'accepted' });
 
+            // Note: cancelling other pending requests still needs a one-time read/write —
+            // this part isn't a live-listened list, so a manual query here is fine and rare.
+            const { getDocs } = await import('firebase/firestore');
             const otherReqsSnap = await getDocs(
                 query(
                     collection(db, 'requests'),
-                    where('fromUid', '==', req.fromUid),
+                    where('individualUid', '==', req.individualUid),
                     where('status', '==', 'pending')
                 )
             );
@@ -103,8 +162,7 @@ export default function MyRequestsPage({ showToast, showAlert }) {
                     .map(d => updateDoc(doc(db, 'requests', d.id), { status: 'cancelled' }))
             );
 
-            showToast && showToast(`${req.fromName} added to your team!`);
-            await loadRequests();
+            showToast && showToast(`${req.individualName} added to ${req.teamName}!`);
 
         } catch (err) {
             console.error('Failed to accept request:', err);
@@ -119,7 +177,6 @@ export default function MyRequestsPage({ showToast, showAlert }) {
             setActingOn(id);
             await updateDoc(doc(db, 'requests', id), { status: 'rejected' });
             showToast && showToast('Request rejected.');
-            await loadRequests();
         } catch (err) {
             console.error('Failed to reject request:', err);
             showAlert && showAlert('Failed to reject request.');
@@ -128,9 +185,18 @@ export default function MyRequestsPage({ showToast, showAlert }) {
         }
     };
 
-    useEffect(() => {
-        loadRequests();
-    }, []);
+    const cancelInvite = async (id) => {
+        try {
+            setActingOn(id);
+            await updateDoc(doc(db, 'requests', id), { status: 'cancelled' });
+            showToast && showToast('Invite cancelled.');
+        } catch (err) {
+            console.error('Failed to cancel invite:', err);
+            showAlert && showAlert('Failed to cancel invite.');
+        } finally {
+            setActingOn(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -142,52 +208,36 @@ export default function MyRequestsPage({ showToast, showAlert }) {
 
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-10">
-            <div className="max-w-5xl mx-auto">
-                <h1 className="text-4xl font-black text-blue-900 mb-8 text-center">My Requests</h1>
+            <div className="max-w-5xl mx-auto space-y-12">
+                <h1 className="text-4xl font-black text-blue-900 text-center">My Requests</h1>
 
                 {myTeam && (
-                    <section className="mb-12">
+                    <section>
                         <h2 className="text-2xl font-bold text-blue-900 mb-4">
-                            Incoming Requests — {myTeam.teamName} ({1 + (myTeam.members?.length || 0)}/{MAX_TEAM_SIZE})
+                            Join Requests — {myTeam.teamName} ({1 + (myTeam.members?.length || 0)}/{MAX_TEAM_SIZE})
                         </h2>
-                        {incoming.length === 0 ? (
-                            <p className="text-slate-500">No incoming requests.</p>
+                        {incomingJoinRequests.length === 0 ? (
+                            <p className="text-slate-500">No incoming join requests.</p>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {incoming.map((req) => (
+                                {incomingJoinRequests.map((req) => (
                                     <motion.div
                                         key={req.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
                                     >
-                                        <p className="font-semibold text-blue-900 text-lg">{req.fromName}</p>
-                                        <p className="text-sm text-slate-500 mb-2">{req.fromBranch} — {req.fromYear}</p>
-                                        <p className="text-sm text-slate-500 mb-3">Contact: {req.fromContactNumber || '—'}</p>
-
+                                        <p className="font-semibold text-blue-900 text-lg">{req.individualName}</p>
+                                        <p className="text-sm text-slate-500 mb-2">{req.individualBranch} — {req.individualYear}</p>
+                                        <p className="text-sm text-slate-500 mb-3">Contact: {req.individualContact || '—'}</p>
                                         <div className="flex flex-wrap gap-2 mb-4">
-                                            {(req.fromSkills || []).map((skill, i) => (
-                                                <span key={i} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">
-                                                    {skill}
-                                                </span>
+                                            {(req.individualSkills || []).map((skill, i) => (
+                                                <span key={i} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">{skill}</span>
                                             ))}
                                         </div>
-
                                         <div className="flex gap-2">
-                                            <button
-                                                onClick={() => acceptRequest(req)}
-                                                disabled={actingOn === req.id}
-                                                className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold"
-                                            >
-                                                Accept
-                                            </button>
-                                            <button
-                                                onClick={() => rejectRequest(req.id)}
-                                                disabled={actingOn === req.id}
-                                                className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold"
-                                            >
-                                                Reject
-                                            </button>
+                                            <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
+                                            <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
                                         </div>
                                     </motion.div>
                                 ))}
@@ -197,27 +247,78 @@ export default function MyRequestsPage({ showToast, showAlert }) {
                 )}
 
                 <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Sent Requests</h2>
-                    {sent.length === 0 ? (
-                        <p className="text-slate-500">No sent requests.</p>
+                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team Invites Received</h2>
+                    {invitesReceived.length === 0 ? (
+                        <p className="text-slate-500">No team invites.</p>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {sent.map((req) => (
+                            {invitesReceived.map((req) => (
                                 <motion.div
                                     key={req.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
                                 >
-                                    <p className="font-semibold text-blue-900">{req.toTeamName}</p>
-                                    <p className="text-sm mt-2">
-                                        Status: <span className="font-medium capitalize">{req.status}</span>
-                                    </p>
+                                    <p className="font-semibold text-blue-900 text-lg">{req.teamName}</p>
+                                    <p className="text-sm text-slate-500 mb-4">invited you to join their team</p>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
+                                        <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
+                                    </div>
                                 </motion.div>
                             ))}
                         </div>
                     )}
                 </section>
+
+                <section>
+                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Requests Sent</h2>
+                    {sentRequests.length === 0 ? (
+                        <p className="text-slate-500">No sent requests.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {sentRequests.map((req) => (
+                                <motion.div
+                                    key={req.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
+                                >
+                                    <p className="font-semibold text-blue-900">{req.teamName}</p>
+                                    <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {myTeam && (
+                    <section>
+                        <h2 className="text-2xl font-bold text-blue-900 mb-4">Invites Sent</h2>
+                        {invitesSent.length === 0 ? (
+                            <p className="text-slate-500">No invites sent yet.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {invitesSent.map((req) => (
+                                    <motion.div
+                                        key={req.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
+                                    >
+                                        <p className="font-semibold text-blue-900">{req.individualName}</p>
+                                        <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
+                                        {req.status === 'pending' && (
+                                            <button onClick={() => cancelInvite(req.id)} disabled={actingOn === req.id} className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl font-semibold text-sm">
+                                                Cancel Invite
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
             </div>
         </div>
     );

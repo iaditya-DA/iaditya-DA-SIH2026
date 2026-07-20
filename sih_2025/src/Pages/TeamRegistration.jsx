@@ -72,11 +72,11 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
                 createdAt: serverTimestamp(),
             });
 
-            await setDoc(doc(db, 'users', user.uid), {
+            await updateDoc(doc(db, 'users', user.uid), {
                 registered: true,
                 role: 'team-leader',
                 teamId: docRef.id,
-            }, { merge: true });
+            });
 
             await refreshRegistration();
 

@@ -10,7 +10,7 @@ import AuthPage from '../AuthPage.jsx';
 import FindTeammatesPage from '../FindTeammatesPage.jsx';
 import MyRequestsPage from '../MyRequestsPage.jsx';
 import ProfilePage from './ProfilePage.jsx';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
 const ResultsPage = () => {
@@ -191,8 +191,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
 };
 
 // Inner component: everything that needs useAuth() must be inside AuthProvider
-const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'individual-register'];
-// Pages that let a user *start* a fresh registration — once registered, these are off-limits;
+const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'individual-register'];// Pages that let a user *start* a fresh registration — once registered, these are off-limits;
 // editing an existing registration should happen from the profile page instead.
 const REGISTRATION_ENTRY_PAGES = ['registration-choice', 'team-register', 'individual-register'];
 const REGISTERED_ONLY_PAGES = ['find-teammates', 'my-requests'];
@@ -209,36 +208,37 @@ const SIHFluidWebsiteInner = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAllData = async () => {
-    setIsLoading(true);
-    try {
-      const teamsSnap = await getDocs(collection(db, 'teams'));
-      const teamsData = teamsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // Everyone who has completed registration shows up here — whether
-      // they're a solo individual, a team leader, or a team member.
-      const individualsQuery = query(
-        collection(db, 'users'),
-        where('registered', '==', true)
-      );
-      const individualsSnap = await getDocs(individualsQuery);
-      const individualsData = individualsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      setTeams(teamsData);
-      setIndividuals(individualsData);
-    } catch (error) {
-      console.error("Failed to fetch registered participants:", error);
-      showAlert("Could not load participant data.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    setIsLoading(true);
 
-  const refetchParticipants = () => fetchAllData();
+    const unsubTeams = onSnapshot(
+      collection(db, 'teams'),
+      (snap) => {
+        setTeams(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load teams:", error);
+        showAlert("Could not load participant data.");
+        setIsLoading(false);
+      }
+    );
+
+    const unsubIndividuals = onSnapshot(
+      query(collection(db, 'users'), where('registered', '==', true)),
+      (snap) => {
+        setIndividuals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      },
+      (error) => {
+        console.error("Failed to load participants:", error);
+      }
+    );
+
+    return () => {
+      unsubTeams();
+      unsubIndividuals();
+    };
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -300,9 +300,9 @@ const SIHFluidWebsiteInner = () => {
         ) : page === 'results' ? (
           <ResultsPage />
         ) : page === 'team-register' ? (
-          <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} refetchParticipants={refetchParticipants} />
+          <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} />
         ) : page === 'individual-register' ? (
-          <IndividualRegistration setPage={setPage} setIndividuals={setIndividuals} showToast={showToast} showAlert={showAlert} refetchParticipants={refetchParticipants} />
+          <IndividualRegistration setPage={setPage} setIndividuals={setIndividuals} showToast={showToast} showAlert={showAlert} />
         ) : page === 'auth' ? (
           <AuthPage setPage={setPage} showToast={showToast} showAlert={showAlert} />
         ) : page === 'find-teammates' ? (
