@@ -569,7 +569,7 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-bold text-blue-900 mb-1">Problem Statement</label>
+                                    <label className="block text-sm font-bold text-blue-900 mb-1">Problem Statement ID</label>
                                     <input
                                         type="text"
                                         value={formProblemStatement}
