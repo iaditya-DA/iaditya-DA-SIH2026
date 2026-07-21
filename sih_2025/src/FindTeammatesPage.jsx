@@ -1,387 +1,333 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     collection,
+    getDocs,
+    addDoc,
     query,
     where,
-    onSnapshot,
     doc,
-    updateDoc,
-    arrayUnion,
-    runTransaction,
-    getDocs,
+    onSnapshot,
     serverTimestamp
 } from 'firebase/firestore';
 import { auth, db } from './firebaseClient.js';
 
 const MAX_TEAM_SIZE = 6;
 
-export default function MyRequestsPage({ showToast, showAlert }) {
-    const [incomingJoinRequests, setIncomingJoinRequests] = useState([]);
-    const [invitesReceived, setInvitesReceived] = useState([]);
-    const [sentRequests, setSentRequests] = useState([]);
-    const [invitesSent, setInvitesSent] = useState([]);
-
-    // ---- Peer "Team Up" requests ----
-    const [peerReceived, setPeerReceived] = useState([]); // team-up requests sent TO me
-    const [peerSent, setPeerSent] = useState([]);         // team-up requests I sent
-
+export default function FindTeammatesPage({ showToast, showAlert }) {
+    const [role, setRole] = useState(null); // 'leader' | 'unassigned' | 'member'
     const [myTeam, setMyTeam] = useState(null);
+    const [myProfile, setMyProfile] = useState(null);
+
+    // ---- Leader-only state ----
+    const [teams, setTeams] = useState([]);
+    const [myPendingTeamIds, setMyPendingTeamIds] = useState(new Set());
+    const [individuals, setIndividuals] = useState([]);
+    const [invitedUids, setInvitedUids] = useState(new Set());
+
+    // ---- Unassigned-only state: "Team Up" (peer-to-peer team creation) ----
+    const [peerCandidates, setPeerCandidates] = useState([]); // other unassigned individuals
+    const [peerSentUids, setPeerSentUids] = useState(new Set()); // people I've already sent a team-up request to
+    const [teamDraft, setTeamDraft] = useState(null); // reused team details once filled once
+    const [showTeamModal, setShowTeamModal] = useState(false);
+    const [pendingTarget, setPendingTarget] = useState(null); // individual we're about to send to, once modal is submitted
+    const [formTeamName, setFormTeamName] = useState('');
+    const [formProblemStatement, setFormProblemStatement] = useState('');
+    const [formGithubLink, setFormGithubLink] = useState('');
+
     const [loading, setLoading] = useState(true);
-    const [actingOn, setActingOn] = useState(null);
+    const [sendingTo, setSendingTo] = useState(null);
 
     useEffect(() => {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            showAlert && showAlert('Please login first');
-            setLoading(false);
-            return;
-        }
-        const uid = currentUser.uid;
+        const user = auth.currentUser;
+        if (!user) { setLoading(false); return; }
 
-        let unsubIncoming = null;
-        let unsubInvitesSent = null;
-        let pending = 5; // teamQuery, invitesReceived, sent, peerReceived, peerSent
-        let settled = false;
-
-        const markLoaded = () => {
-            pending = Math.max(0, pending - 1);
-            if (pending === 0) setLoading(false);
+        let innerUnsubs = [];
+        const cleanupInner = () => {
+            innerUnsubs.forEach((u) => u && u());
+            innerUnsubs = [];
         };
 
-        // ---- Team leadership listener (drives incoming + invitesSent) ----
-        const teamQuery = query(collection(db, 'teams'), where('leader.uid', '==', uid));
-        const unsubTeam = onSnapshot(teamQuery, (teamSnap) => {
-            const teamDoc = teamSnap.docs[0] ? { id: teamSnap.docs[0].id, ...teamSnap.docs[0].data() } : null;
-            setMyTeam(teamDoc);
+        // ---- Profile listener ----
+        const unsubProfile = onSnapshot(doc(db, 'users', user.uid), (profileSnap) => {
+            setMyProfile(profileSnap.exists() ? profileSnap.data() : null);
+        });
 
-            if (unsubIncoming) { unsubIncoming(); unsubIncoming = null; }
-            if (unsubInvitesSent) { unsubInvitesSent(); unsubInvitesSent = null; }
+        // ---- Leadership listener drives everything else ----
+        const leaderQuery = query(collection(db, 'teams'), where('leader.uid', '==', user.uid));
+        const unsubLeader = onSnapshot(leaderQuery, (leaderSnap) => {
+            cleanupInner();
 
-            if (teamDoc) {
-                const incomingQuery = query(
+            if (!leaderSnap.empty) {
+                // ===== LEADER =====
+                const teamData = { id: leaderSnap.docs[0].id, ...leaderSnap.docs[0].data() };
+                setMyTeam(teamData);
+                setRole('leader');
+
+                const individualsQuery = query(
+                    collection(db, 'users'),
+                    where('registered', '==', true),
+                    where('role', '==', 'individual'),
+                    where('teamId', '==', null)
+                );
+                innerUnsubs.push(onSnapshot(individualsQuery, (snap) => {
+                    setIndividuals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    setLoading(false);
+                }));
+
+                const invitesQuery = query(
                     collection(db, 'requests'),
-                    where('teamId', '==', teamDoc.id),
-                    where('initiatedBy', '==', 'individual'),
+                    where('teamId', '==', teamData.id),
+                    where('initiatedBy', '==', 'leader'),
                     where('status', '==', 'pending')
                 );
-                unsubIncoming = onSnapshot(incomingQuery, (snap) => {
-                    setIncomingJoinRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                });
+                innerUnsubs.push(onSnapshot(invitesQuery, (snap) => {
+                    setInvitedUids(new Set(snap.docs.map(d => d.data().individualUid)));
+                }));
 
-                const invitesSentQuery = query(
-                    collection(db, 'requests'),
-                    where('teamId', '==', teamDoc.id),
-                    where('initiatedBy', '==', 'leader')
-                );
-                unsubInvitesSent = onSnapshot(invitesSentQuery, (snap) => {
-                    setInvitesSent(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                });
             } else {
-                setIncomingJoinRequests([]);
-                setInvitesSent([]);
+                // Determine unassigned vs member from the live profile doc
+                getDocs(query(collection(db, 'users'), where('__name__', '==', user.uid))).then((profileSnap) => {
+                    const profile = profileSnap.docs[0]?.data();
+
+                    if (profile?.teamId) {
+                        setRole('member');
+                        setLoading(false);
+                    } else {
+                        setRole('unassigned');
+
+                        // -- Teams with open slots (existing "join a team" flow) --
+                        const teamsQuery = collection(db, 'teams');
+                        innerUnsubs.push(onSnapshot(teamsQuery, (snap) => {
+                            const allTeams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                            setTeams(allTeams.filter(team => team.leader?.uid !== user.uid));
+                            setLoading(false);
+                        }));
+
+                        const reqQuery = query(
+                            collection(db, 'requests'),
+                            where('individualUid', '==', user.uid),
+                            where('initiatedBy', '==', 'individual'),
+                            where('status', '==', 'pending')
+                        );
+                        innerUnsubs.push(onSnapshot(reqQuery, (snap) => {
+                            setMyPendingTeamIds(new Set(snap.docs.map(d => d.data().teamId)));
+                        }));
+
+                        // -- Other unassigned individuals ("Team Up" flow) --
+                        const peerCandidatesQuery = query(
+                            collection(db, 'users'),
+                            where('registered', '==', true),
+                            where('role', '==', 'individual'),
+                            where('teamId', '==', null)
+                        );
+                        innerUnsubs.push(onSnapshot(peerCandidatesQuery, (snap) => {
+                            setPeerCandidates(
+                                snap.docs
+                                    .map(d => ({ id: d.id, ...d.data() }))
+                                    .filter(ind => ind.id !== user.uid)
+                            );
+                        }));
+
+                        // -- Peer team-up requests I've already sent (pending) --
+                        const peerSentQuery = query(
+                            collection(db, 'requests'),
+                            where('fromUid', '==', user.uid),
+                            where('initiatedBy', '==', 'peer'),
+                            where('status', '==', 'pending')
+                        );
+                        innerUnsubs.push(onSnapshot(peerSentQuery, (snap) => {
+                            setPeerSentUids(new Set(snap.docs.map(d => d.data().toUid)));
+                        }));
+                    }
+                });
             }
-
-            if (!settled) markLoaded();
         }, (err) => {
-            console.error('Failed to load team:', err);
-            if (!settled) markLoaded();
-        });
-
-        // ---- Invites received (leader -> me) ----
-        const invitesReceivedQuery = query(
-            collection(db, 'requests'),
-            where('individualUid', '==', uid),
-            where('initiatedBy', '==', 'leader'),
-            where('status', '==', 'pending')
-        );
-        const unsubInvitesReceived = onSnapshot(invitesReceivedQuery, (snap) => {
-            setInvitesReceived(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            markLoaded();
-        }, (err) => {
-            console.error('Failed to load invites:', err);
-            markLoaded();
-        });
-
-        // ---- Requests I sent (me -> team, join request) ----
-        const sentQuery = query(
-            collection(db, 'requests'),
-            where('individualUid', '==', uid),
-            where('initiatedBy', '==', 'individual')
-        );
-        const unsubSent = onSnapshot(sentQuery, (snap) => {
-            setSentRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            markLoaded();
-        }, (err) => {
-            console.error('Failed to load sent requests:', err);
-            markLoaded();
-        });
-
-        // ---- Peer "Team Up" requests received (someone -> me) ----
-        const peerReceivedQuery = query(
-            collection(db, 'requests'),
-            where('toUid', '==', uid),
-            where('initiatedBy', '==', 'peer'),
-            where('status', '==', 'pending')
-        );
-        const unsubPeerReceived = onSnapshot(peerReceivedQuery, (snap) => {
-            setPeerReceived(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            markLoaded();
-        }, (err) => {
-            console.error('Failed to load team-up requests:', err);
-            markLoaded();
-        });
-
-        // ---- Peer "Team Up" requests I sent (me -> someone) ----
-        const peerSentQuery = query(
-            collection(db, 'requests'),
-            where('fromUid', '==', uid),
-            where('initiatedBy', '==', 'peer')
-        );
-        const unsubPeerSent = onSnapshot(peerSentQuery, (snap) => {
-            setPeerSent(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            markLoaded();
-        }, (err) => {
-            console.error('Failed to load sent team-up requests:', err);
-            markLoaded();
+            console.error('Failed to load data:', err);
+            showAlert && showAlert('Failed to load data.');
+            setLoading(false);
         });
 
         return () => {
-            settled = true;
-            unsubTeam();
-            unsubInvitesReceived();
-            unsubSent();
-            unsubPeerReceived();
-            unsubPeerSent();
-            if (unsubIncoming) unsubIncoming();
-            if (unsubInvitesSent) unsubInvitesSent();
+            unsubProfile();
+            unsubLeader();
+            cleanupInner();
         };
     }, []);
 
-    const acceptRequest = async (req) => {
+    const sendJoinRequest = async (team) => {
         try {
-            setActingOn(req.id);
+            const user = auth.currentUser;
+            if (!user) { showAlert && showAlert('Please login first'); return; }
+            if (!myProfile) { showAlert && showAlert('Complete your profile first.'); return; }
 
-            const teamRef = doc(db, 'teams', req.teamId);
-            const requestRef = doc(db, 'requests', req.id);
-            const individualRef = doc(db, 'users', req.individualUid);
+            setSendingTo(team.id);
 
-            await runTransaction(db, async (transaction) => {
-                const [teamSnap, requestSnap, individualSnap] = await Promise.all([
-                    transaction.get(teamRef),
-                    transaction.get(requestRef),
-                    transaction.get(individualRef),
-                ]);
+            const dupCheck = await getDocs(query(
+                collection(db, 'requests'),
+                where('individualUid', '==', user.uid),
+                where('teamId', '==', team.id),
+                where('status', '==', 'pending')
+            ));
+            if (!dupCheck.empty) {
+                showAlert && showAlert('You already have a pending request with this team.');
+                return;
+            }
 
-                if (!requestSnap.exists() || requestSnap.data().status !== 'pending') {
-                    throw new Error('This request is no longer valid — it may have already been handled.');
-                }
-                if (!teamSnap.exists()) {
-                    throw new Error('This team no longer exists.');
-                }
-
-                const teamData = teamSnap.data();
-                const currentSize = 1 + (teamData.members?.length || 0);
-                if (currentSize >= MAX_TEAM_SIZE) {
-                    throw new Error('This team is already full.');
-                }
-
-                if (!individualSnap.exists() || individualSnap.data().teamId) {
-                    throw new Error(`${req.individualName} has already joined another team.`);
-                }
-
-                transaction.update(teamRef, {
-                    members: arrayUnion({
-                        uid: req.individualUid,
-                        name: req.individualName,
-                        year: req.individualYear,
-                        branch: req.individualBranch,
-                        contactNumber: req.individualContact || '',
-                        skills: req.individualSkills || [],
-                    }),
-                });
-                transaction.update(individualRef, { teamId: req.teamId });
-                transaction.update(requestRef, { status: 'accepted' });
+            await addDoc(collection(db, 'requests'), {
+                individualUid: user.uid,
+                individualName: myProfile.name,
+                individualYear: myProfile.year,
+                individualBranch: myProfile.branch,
+                individualContact: myProfile.contactNumber || '',
+                individualSkills: myProfile.skills || [],
+                teamId: team.id,
+                teamName: team.teamName,
+                leaderUid: team.leader.uid,
+                initiatedBy: 'individual',
+                status: 'pending',
+                createdAt: serverTimestamp(),
             });
 
-            // Best-effort cleanup — not transactional. If a stale request slips
-            // through here, the transaction's own teamId check above will safely
-            // reject it next time someone tries to accept it.
-            const otherReqsSnap = await getDocs(
-                query(
-                    collection(db, 'requests'),
-                    where('individualUid', '==', req.individualUid),
-                    where('status', '==', 'pending')
-                )
-            );
-            await Promise.all(
-                otherReqsSnap.docs
-                    .filter(d => d.id !== req.id)
-                    .map(d => updateDoc(doc(db, 'requests', d.id), { status: 'cancelled' }))
-            );
-
-            showToast && showToast(`${req.individualName} added to ${req.teamName}!`);
+            showToast && showToast(`Request sent to ${team.teamName}!`);
 
         } catch (err) {
-            console.error('Failed to accept request:', err);
-            showAlert && showAlert(err.message || 'Failed to accept request.');
+            console.error('Failed to send request:', err);
+            showAlert && showAlert('Failed to send request');
         } finally {
-            setActingOn(null);
+            setSendingTo(null);
         }
     };
 
-    const rejectRequest = async (id) => {
+    const sendInvite = async (individual) => {
         try {
-            setActingOn(id);
-            await updateDoc(doc(db, 'requests', id), { status: 'rejected' });
-            showToast && showToast('Request rejected.');
-        } catch (err) {
-            console.error('Failed to reject request:', err);
-            showAlert && showAlert('Failed to reject request.');
-        } finally {
-            setActingOn(null);
-        }
-    };
+            const user = auth.currentUser;
+            setSendingTo(individual.id);
 
-    const cancelInvite = async (id) => {
-        try {
-            setActingOn(id);
-            await updateDoc(doc(db, 'requests', id), { status: 'cancelled' });
-            showToast && showToast('Invite cancelled.');
-        } catch (err) {
-            console.error('Failed to cancel invite:', err);
-            showAlert && showAlert('Failed to cancel invite.');
-        } finally {
-            setActingOn(null);
-        }
-    };
+            const dupCheck = await getDocs(query(
+                collection(db, 'requests'),
+                where('individualUid', '==', individual.id),
+                where('teamId', '==', myTeam.id),
+                where('status', '==', 'pending')
+            ));
+            if (!dupCheck.empty) {
+                showAlert && showAlert('You already invited this person.');
+                return;
+            }
 
-    // ---- Peer "Team Up" actions ----
-
-    const acceptPeerRequest = async (req) => {
-        try {
-            setActingOn(req.id);
-            const currentUser = auth.currentUser;
-            if (!currentUser) { showAlert && showAlert('Please login first'); return; }
-
-            const requestRef = doc(db, 'requests', req.id);
-            const fromUserRef = doc(db, 'users', req.fromUid);
-            const toUserRef = doc(db, 'users', currentUser.uid);
-            const newTeamRef = doc(collection(db, 'teams'));
-
-            await runTransaction(db, async (transaction) => {
-                const [requestSnap, fromSnap, toSnap] = await Promise.all([
-                    transaction.get(requestRef),
-                    transaction.get(fromUserRef),
-                    transaction.get(toUserRef),
-                ]);
-
-                if (!requestSnap.exists() || requestSnap.data().status !== 'pending') {
-                    throw new Error('This request is no longer valid — it may have already been handled.');
-                }
-                if (!fromSnap.exists() || !toSnap.exists()) {
-                    throw new Error('One of the users no longer exists.');
-                }
-
-                const fromData = fromSnap.data();
-                const toData = toSnap.data();
-
-                if (fromData.teamId) {
-                    throw new Error(`${req.fromName} has already joined another team.`);
-                }
-                if (toData.teamId) {
-                    throw new Error('You have already joined another team.');
-                }
-
-                transaction.set(newTeamRef, {
-                    teamName: req.proposedTeam?.teamName || 'Untitled Team',
-                    problemStatement: req.proposedTeam?.problemStatement || '',
-                    githubLink: req.proposedTeam?.githubLink || '',
-                    // The person who sent the team-up request becomes the leader;
-                    // the person who accepted it joins as a member.
-                    leader: {
-                        uid: req.fromUid,
-                        name: fromData.name,
-                        year: fromData.year,
-                        branch: fromData.branch,
-                        contactNumber: fromData.contactNumber || '',
-                        skills: fromData.skills || [],
-                    },
-                    members: [{
-                        uid: currentUser.uid,
-                        name: toData.name,
-                        year: toData.year,
-                        branch: toData.branch,
-                        contactNumber: toData.contactNumber || '',
-                        skills: toData.skills || [],
-                    }],
-                    createdAt: serverTimestamp(),
-                });
-
-                transaction.update(fromUserRef, { teamId: newTeamRef.id });
-                transaction.update(toUserRef, { teamId: newTeamRef.id });
-                transaction.update(requestRef, { status: 'accepted' });
+            await addDoc(collection(db, 'requests'), {
+                individualUid: individual.id,
+                individualName: individual.name,
+                individualYear: individual.year,
+                individualBranch: individual.branch,
+                individualContact: individual.contactNumber || '',
+                individualSkills: individual.skills || [],
+                teamId: myTeam.id,
+                teamName: myTeam.teamName,
+                leaderUid: user.uid,
+                initiatedBy: 'leader',
+                status: 'pending',
+                createdAt: serverTimestamp(),
             });
 
-            // Best-effort cleanup of any other pending requests involving either user
-            // (join requests, invites, or other team-up requests) so stale UI clears up.
-            const [byIndividualFrom, byIndividualTo, byFromUid, byToUidFrom, byToUidTo, byFromUidTo] = await Promise.all([
-                getDocs(query(collection(db, 'requests'), where('individualUid', '==', req.fromUid), where('status', '==', 'pending'))),
-                getDocs(query(collection(db, 'requests'), where('individualUid', '==', currentUser.uid), where('status', '==', 'pending'))),
-                getDocs(query(collection(db, 'requests'), where('fromUid', '==', req.fromUid), where('status', '==', 'pending'))),
-                getDocs(query(collection(db, 'requests'), where('toUid', '==', req.fromUid), where('status', '==', 'pending'))),
-                getDocs(query(collection(db, 'requests'), where('toUid', '==', currentUser.uid), where('status', '==', 'pending'))),
-                getDocs(query(collection(db, 'requests'), where('fromUid', '==', currentUser.uid), where('status', '==', 'pending'))),
-            ]);
+            showToast && showToast(`Invite sent to ${individual.name}!`);
 
-            const seen = new Set([req.id]);
-            const toCancel = [];
-            [byIndividualFrom, byIndividualTo, byFromUid, byToUidFrom, byToUidTo, byFromUidTo].forEach(snap => {
-                snap.docs.forEach(d => {
-                    if (!seen.has(d.id)) {
-                        seen.add(d.id);
-                        toCancel.push(d.id);
-                    }
-                });
+        } catch (err) {
+            console.error('Failed to send invite:', err);
+            showAlert && showAlert('Failed to send invite');
+        } finally {
+            setSendingTo(null);
+        }
+    };
+
+    // ---- "Team Up" (peer-to-peer) logic ----
+
+    const actuallySendPeerRequest = async (target, draft) => {
+        try {
+            const user = auth.currentUser;
+            if (!myProfile) { showAlert && showAlert('Complete your profile first.'); return; }
+
+            setSendingTo(target.id);
+
+            const dupCheck = await getDocs(query(
+                collection(db, 'requests'),
+                where('fromUid', '==', user.uid),
+                where('toUid', '==', target.id),
+                where('status', '==', 'pending')
+            ));
+            if (!dupCheck.empty) {
+                showAlert && showAlert('You already sent a team-up request to this person.');
+                return;
+            }
+
+            await addDoc(collection(db, 'requests'), {
+                fromUid: user.uid,
+                fromName: myProfile.name,
+                toUid: target.id,
+                toName: target.name,
+                proposedTeam: {
+                    teamName: draft.teamName,
+                    problemStatement: draft.problemStatement,
+                    githubLink: draft.githubLink || '',
+                },
+                initiatedBy: 'peer',
+                status: 'pending',
+                createdAt: serverTimestamp(),
             });
 
-            await Promise.all(
-                toCancel.map(id => updateDoc(doc(db, 'requests', id), { status: 'cancelled' }))
-            );
-
-            showToast && showToast(`Team "${req.proposedTeam?.teamName}" created with ${req.fromName}!`);
+            showToast && showToast(`Team-up request sent to ${target.name}!`);
 
         } catch (err) {
-            console.error('Failed to accept team-up request:', err);
-            showAlert && showAlert(err.message || 'Failed to accept request.');
+            console.error('Failed to send team-up request:', err);
+            showAlert && showAlert('Failed to send request');
         } finally {
-            setActingOn(null);
+            setSendingTo(null);
         }
     };
 
-    const rejectPeerRequest = async (id) => {
-        try {
-            setActingOn(id);
-            await updateDoc(doc(db, 'requests', id), { status: 'rejected' });
-            showToast && showToast('Team-up request rejected.');
-        } catch (err) {
-            console.error('Failed to reject team-up request:', err);
-            showAlert && showAlert('Failed to reject request.');
-        } finally {
-            setActingOn(null);
+    const handleTeamUpClick = (individual) => {
+        if (peerSentUids.has(individual.id) || sendingTo) return;
+        setPendingTarget(individual);
+
+        if (teamDraft) {
+            // Reuse previously entered team details — no need to ask again.
+            actuallySendPeerRequest(individual, teamDraft).then(() => setPendingTarget(null));
+        } else {
+            setFormTeamName('');
+            setFormProblemStatement('');
+            setFormGithubLink('');
+            setShowTeamModal(true);
         }
     };
 
-    const cancelPeerRequest = async (id) => {
-        try {
-            setActingOn(id);
-            await updateDoc(doc(db, 'requests', id), { status: 'cancelled' });
-            showToast && showToast('Team-up request cancelled.');
-        } catch (err) {
-            console.error('Failed to cancel team-up request:', err);
-            showAlert && showAlert('Failed to cancel request.');
-        } finally {
-            setActingOn(null);
+    const openEditDraftModal = () => {
+        setFormTeamName(teamDraft?.teamName || '');
+        setFormProblemStatement(teamDraft?.problemStatement || '');
+        setFormGithubLink(teamDraft?.githubLink || '');
+        setPendingTarget(null);
+        setShowTeamModal(true);
+    };
+
+    const handleTeamModalSubmit = async (e) => {
+        e.preventDefault();
+        if (!formTeamName.trim() || !formProblemStatement.trim()) {
+            showAlert && showAlert('Please fill in Team Name and Problem Statement.');
+            return;
+        }
+
+        const draft = {
+            teamName: formTeamName.trim(),
+            problemStatement: formProblemStatement.trim(),
+            githubLink: formGithubLink.trim(),
+        };
+        setTeamDraft(draft);
+        setShowTeamModal(false);
+
+        if (pendingTarget) {
+            await actuallySendPeerRequest(pendingTarget, draft);
+            setPendingTarget(null);
+        } else {
+            showToast && showToast('Team details saved.');
         }
     };
 
@@ -393,188 +339,278 @@ export default function MyRequestsPage({ showToast, showAlert }) {
         );
     }
 
+    if (role === 'member') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
+                <div className="text-center max-w-md">
+                    <h1 className="text-3xl font-black text-blue-900 mb-3">You're Already in a Team</h1>
+                    <p className="text-slate-600">
+                        You've already joined a team, so you don't need to find teammates anymore. Check your profile for team details.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (role === 'leader') {
+        const currentSize = 1 + (myTeam.members?.length || 0);
+        const isFull = currentSize >= MAX_TEAM_SIZE;
+
+        return (
+            <div className="min-h-screen bg-slate-50 px-4 py-10">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-10">
+                        <h1 className="text-4xl md:text-5xl font-black text-blue-900 mb-3">Invite Members</h1>
+                        <p className="text-slate-600 text-lg">{myTeam.teamName} — {currentSize}/{MAX_TEAM_SIZE} members</p>
+                    </div>
+
+                    {isFull ? (
+                        <div className="text-center py-20">
+                            <p className="text-slate-500 text-lg">Your team is full. You can't invite more members.</p>
+                        </div>
+                    ) : individuals.length === 0 ? (
+                        <div className="text-center py-20">
+                            <p className="text-slate-500 text-lg">No individuals available to invite right now.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {individuals.map((individual, index) => {
+                                const alreadyInvited = invitedUids.has(individual.id);
+                                return (
+                                    <motion.div
+                                        key={individual.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 p-6"
+                                    >
+                                        <h3 className="text-xl font-bold text-blue-900 mb-1">{individual.name}</h3>
+                                        <p className="text-slate-600 mb-1">{individual.branch}</p>
+                                        <p className="text-sm text-slate-500 mb-4">Year {individual.year}</p>
+
+                                        <div className="flex flex-wrap gap-2 mb-5">
+                                            {(individual.skills || []).length > 0 ? (
+                                                individual.skills.slice(0, 5).map((skill, i) => (
+                                                    <span key={i} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">{skill}</span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-slate-400">No skills added</span>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            onClick={() => sendInvite(individual)}
+                                            disabled={sendingTo === individual.id || alreadyInvited}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-semibold transition-colors"
+                                        >
+                                            {sendingTo === individual.id ? 'Sending...' : alreadyInvited ? 'Invited' : 'Send Invite'}
+                                        </button>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // ===== UNASSIGNED — show both "Find a Team" and "Team Up With Others" =====
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-10">
-            <div className="max-w-5xl mx-auto space-y-12">
-                <h1 className="text-4xl font-black text-blue-900 text-center">My Requests</h1>
+            <div className="max-w-6xl mx-auto space-y-16">
 
-                {myTeam && (
-                    <section>
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4">
-                            Join Requests — {myTeam.teamName} ({1 + (myTeam.members?.length || 0)}/{MAX_TEAM_SIZE})
-                        </h2>
-                        {incomingJoinRequests.length === 0 ? (
-                            <p className="text-slate-500">No incoming join requests.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {incomingJoinRequests.map((req) => (
+                {/* ---- Section 1: Join an existing team ---- */}
+                <section>
+                    <div className="text-center mb-10">
+                        <h1 className="text-4xl md:text-5xl font-black text-blue-900 mb-3">Find a Team</h1>
+                        <p className="text-slate-600 text-lg">Browse teams with open slots and send a join request.</p>
+                    </div>
+
+                    {teams.length === 0 ? (
+                        <div className="text-center py-16">
+                            <p className="text-slate-500 text-lg">No teams available right now.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {teams.map((team, index) => {
+                                const currentSize = 1 + (team.members?.length || 0);
+                                const isFull = currentSize >= MAX_TEAM_SIZE;
+                                const alreadyRequested = myPendingTeamIds.has(team.id);
+
+                                return (
                                     <motion.div
-                                        key={req.id}
-                                        initial={{ opacity: 0, y: 10 }}
+                                        key={team.id}
+                                        initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 p-6"
                                     >
-                                        <p className="font-semibold text-blue-900 text-lg">{req.individualName}</p>
-                                        <p className="text-sm text-slate-500 mb-2">{req.individualBranch} — {req.individualYear}</p>
-                                        <p className="text-sm text-slate-500 mb-3">Contact: {req.individualContact || '—'}</p>
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {(req.individualSkills || []).map((skill, i) => (
-                                                <span key={i} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">{skill}</span>
-                                            ))}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
-                                            <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                )}
+                                        <h3 className="text-xl font-bold text-blue-900 mb-1">{team.teamName}</h3>
+                                        <p className="text-slate-600 mb-1">Leader: {team.leader?.name}</p>
+                                        <p className="text-sm text-slate-500 mb-4">{currentSize}/{MAX_TEAM_SIZE} members</p>
 
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team Invites Received</h2>
-                    {invitesReceived.length === 0 ? (
-                        <p className="text-slate-500">No team invites.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {invitesReceived.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900 text-lg">{req.teamName}</p>
-                                    <p className="text-sm text-slate-500 mb-4">invited you to join their team</p>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
-                                        <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* ---- Team-Up Requests Received ---- */}
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team-Up Requests Received</h2>
-                    {peerReceived.length === 0 ? (
-                        <p className="text-slate-500">No team-up requests.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {peerReceived.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900 text-lg">{req.fromName}</p>
-                                    <p className="text-sm text-slate-500 mb-1">wants to team up with you</p>
-                                    <p className="font-medium text-blue-900 mt-2">{req.proposedTeam?.teamName}</p>
-                                    <p className="text-sm text-slate-500 mb-2">{req.proposedTeam?.problemStatement}</p>
-                                    {req.proposedTeam?.githubLink && (
-                                        <a
-                                            href={req.proposedTeam.githubLink}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-orange-600 underline break-all"
-                                        >
-                                            {req.proposedTeam.githubLink}
-                                        </a>
-                                    )}
-                                    <div className="flex gap-2 mt-4">
-                                        <button onClick={() => acceptPeerRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">
-                                            {actingOn === req.id ? 'Creating...' : 'Accept'}
-                                        </button>
-                                        <button onClick={() => rejectPeerRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Requests Sent</h2>
-                    {sentRequests.length === 0 ? (
-                        <p className="text-slate-500">No sent requests.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {sentRequests.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900">{req.teamName}</p>
-                                    <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* ---- Team-Up Requests Sent ---- */}
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team-Up Requests Sent</h2>
-                    {peerSent.length === 0 ? (
-                        <p className="text-slate-500">No team-up requests sent yet.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {peerSent.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900">{req.toName}</p>
-                                    <p className="text-sm text-slate-500 mb-1">{req.proposedTeam?.teamName}</p>
-                                    <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
-                                    {req.status === 'pending' && (
-                                        <button onClick={() => cancelPeerRequest(req.id)} disabled={actingOn === req.id} className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl font-semibold text-sm">
-                                            Cancel Request
-                                        </button>
-                                    )}
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {myTeam && (
-                    <section>
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4">Invites Sent</h2>
-                        {invitesSent.length === 0 ? (
-                            <p className="text-slate-500">No invites sent yet.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {invitesSent.map((req) => (
-                                    <motion.div
-                                        key={req.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                    >
-                                        <p className="font-semibold text-blue-900">{req.individualName}</p>
-                                        <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
-                                        {req.status === 'pending' && (
-                                            <button onClick={() => cancelInvite(req.id)} disabled={actingOn === req.id} className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl font-semibold text-sm">
-                                                Cancel Invite
-                                            </button>
+                                        {team.problemStatement && (
+                                            <p className="text-sm text-slate-500 mb-4 line-clamp-3">{team.problemStatement}</p>
                                         )}
+
+                                        <button
+                                            onClick={() => sendJoinRequest(team)}
+                                            disabled={sendingTo === team.id || isFull || alreadyRequested}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-semibold transition-colors"
+                                        >
+                                            {sendingTo === team.id ? 'Sending...' : isFull ? 'Team Full' : alreadyRequested ? 'Requested' : 'Send Join Request'}
+                                        </button>
                                     </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                )}
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
+
+                <div className="border-t border-gray-200" />
+
+                {/* ---- Section 2: Team up with another individual ---- */}
+                <section>
+                    <div className="text-center mb-6">
+                        <h2 className="text-4xl md:text-5xl font-black text-blue-900 mb-3">Team Up With Others</h2>
+                        <p className="text-slate-600 text-lg">No team yet? Send a request to another solo participant to start one together.</p>
+                    </div>
+
+                    {teamDraft && (
+                        <div className="flex justify-center mb-8">
+                            <button
+                                onClick={openEditDraftModal}
+                                className="text-sm font-semibold text-blue-900 underline underline-offset-2 hover:text-orange-600"
+                            >
+                                Edit team details ({teamDraft.teamName})
+                            </button>
+                        </div>
+                    )}
+
+                    {peerCandidates.length === 0 ? (
+                        <div className="text-center py-16">
+                            <p className="text-slate-500 text-lg">No other solo participants available right now.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {peerCandidates.map((individual, index) => {
+                                const alreadyRequested = peerSentUids.has(individual.id);
+                                return (
+                                    <motion.div
+                                        key={individual.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 p-6"
+                                    >
+                                        <h3 className="text-xl font-bold text-blue-900 mb-1">{individual.name}</h3>
+                                        <p className="text-slate-600 mb-1">{individual.branch}</p>
+                                        <p className="text-sm text-slate-500 mb-4">Year {individual.year}</p>
+
+                                        <div className="flex flex-wrap gap-2 mb-5">
+                                            {(individual.skills || []).length > 0 ? (
+                                                individual.skills.slice(0, 5).map((skill, i) => (
+                                                    <span key={i} className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">{skill}</span>
+                                                ))
+                                            ) : (
+                                                <span className="text-sm text-slate-400">No skills added</span>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            onClick={() => handleTeamUpClick(individual)}
+                                            disabled={sendingTo === individual.id || alreadyRequested}
+                                            className="w-full bg-blue-900 hover:bg-blue-800 disabled:bg-blue-300 text-white py-3 rounded-2xl font-semibold transition-colors"
+                                        >
+                                            {sendingTo === individual.id ? 'Sending...' : alreadyRequested ? 'Requested' : 'Team Up'}
+                                        </button>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </section>
             </div>
+
+            {/* ---- Team details modal ---- */}
+            <AnimatePresence>
+                {showTeamModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50"
+                        onClick={() => setShowTeamModal(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-8 w-full max-w-md shadow-xl"
+                        >
+                            <h3 className="text-2xl font-black text-blue-900 mb-1">Team Details</h3>
+                            <p className="text-sm text-slate-500 mb-6">
+                                These details will be reused every time you send a "Team Up" request — you won't need to fill this again.
+                            </p>
+
+                            <form onSubmit={handleTeamModalSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-blue-900 mb-1">Team Name</label>
+                                    <input
+                                        type="text"
+                                        value={formTeamName}
+                                        onChange={(e) => setFormTeamName(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                        placeholder="e.g. Team Rocket"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-blue-900 mb-1">Problem Statement</label>
+                                    <input
+                                        type="text"
+                                        value={formProblemStatement}
+                                        onChange={(e) => setFormProblemStatement(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                        placeholder="What are you building?"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-blue-900 mb-1">GitHub Link <span className="font-normal text-slate-400">(optional)</span></label>
+                                    <input
+                                        type="text"
+                                        value={formGithubLink}
+                                        onChange={(e) => setFormGithubLink(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                        placeholder="https://github.com/..."
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowTeamModal(false)}
+                                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-slate-700 py-3 rounded-2xl font-semibold transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-semibold transition-colors"
+                                    >
+                                        {pendingTarget ? 'Save & Send' : 'Save Details'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
