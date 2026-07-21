@@ -1,6 +1,29 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const scrollbarStyles = `
+  .sih-modal-scroll::-webkit-scrollbar { width: 8px; }
+  .sih-modal-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sih-modal-scroll::-webkit-scrollbar-thumb { background-color: #fdba74; border-radius: 9999px; }
+  .sih-modal-scroll::-webkit-scrollbar-thumb:hover { background-color: #f97316; }
+  .sih-modal-scroll { scrollbar-width: thin; scrollbar-color: #fdba74 transparent; }
+`;
+
+const getInitials = (name = '') =>
+  name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+
+const Avatar = ({ name, tone = 'orange' }) => {
+  const tones = {
+    orange: 'bg-orange-100 text-orange-700 border-orange-300',
+    blue: 'bg-blue-100 text-blue-800 border-blue-300',
+  };
+  return (
+    <div className={`w-11 h-11 rounded-full border-2 flex items-center justify-center font-bold text-sm flex-shrink-0 ${tones[tone]}`}>
+      {getInitials(name)}
+    </div>
+  );
+};
+
 // Team Details Modal
 const TeamDetailsModal = ({ team, onClose }) => {
   if (!team) return null;
@@ -18,55 +41,78 @@ const TeamDetailsModal = ({ team, onClose }) => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white border border-gray-200 rounded-3xl shadow-2xl max-w-4xl w-full text-left max-h-[90vh] overflow-y-auto"
+          className="sih-modal-scroll bg-white border border-gray-200 rounded-3xl shadow-2xl max-w-4xl w-full text-left max-h-[90vh] overflow-y-auto"
+          data-lenis-prevent
           onClick={e => e.stopPropagation()}
         >
-          <div className="p-6 md:p-8 sticky top-0 bg-white/90 backdrop-blur-lg border-b border-gray-200 rounded-t-3xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-blue-900">{team.teamName}</h2>
-            {team.problemStatement && <p className="text-slate-600 mt-2">{team.problemStatement}</p>}
+          <style>{scrollbarStyles}</style>
+
+          <div className="p-6 md:p-8 sticky top-0 z-10 bg-gradient-to-r from-blue-900 to-blue-800 rounded-t-3xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-2xl md:text-3xl font-black text-white truncate">{team.teamName}</h2>
+                {team.problemStatement && (
+                  <p className="text-blue-100 mt-2 text-sm leading-relaxed">{team.problemStatement}</p>
+                )}
+              </div>
+              <span className="flex-shrink-0 text-xs font-bold bg-orange-500 text-white rounded-full px-3 py-1.5 whitespace-nowrap">
+                {team.members.filter(m => m.name).length + 1} Members
+              </span>
+            </div>
           </div>
 
           <div className="p-6 md:p-8 space-y-8">
             <div>
-              <h3 className="text-xl font-bold text-blue-800 mb-4 border-b border-gray-200 pb-2">Team Leader</h3>
-              <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                <p className="text-lg"><strong className="text-slate-800">{team.leader.name}</strong></p>
-                <p className="text-slate-600">({team.leader.branch} - {team.leader.year})</p>
-                <p className="text-sm text-slate-500 mt-1">Contact: {team.leader.contactNumber}</p>
-                {team.leader.githubLink && (
-                  <p className="text-sm text-slate-500">GitHub: {team.leader.githubLink}</p>
-                )}
+              <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Team Leader</h3>
+              <div className="flex items-start gap-4 bg-blue-50/60 border border-blue-100 p-4 rounded-2xl">
+                <Avatar name={team.leader.name} tone="blue" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-lg font-bold text-slate-800">{team.leader.name}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wide bg-blue-900 text-white rounded-full px-2 py-0.5">Leader</span>
+                  </div>
+                  <p className="text-slate-500 text-sm">{team.leader.branch} · {team.leader.year}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-slate-600">
+                    {team.leader.contactNumber && <span>📞 {team.leader.contactNumber}</span>}
+                    {team.leader.githubLink && <span>🔗 GitHub</span>}
+                  </div>
+                </div>
               </div>
             </div>
 
             {team.members.filter(m => m.name).length > 0 && (
               <div>
-                <h3 className="text-xl font-bold text-blue-800 mb-4 border-b border-gray-200 pb-2">Members</h3>
+                <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">
+                  Members ({team.members.filter(m => m.name).length})
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {team.members.filter(m => m.name).map((member, index) => (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-gray-50 border border-gray-200 p-4 rounded-xl"
+                      transition={{ delay: index * 0.08 }}
+                      className="flex items-start gap-3 bg-gray-50 border border-gray-200 p-4 rounded-2xl hover:border-orange-200 transition-colors"
                     >
-                      <p className="text-lg"><strong className="text-slate-800">{member.name}</strong></p>
-                      <p className="text-slate-600">({member.branch} - {member.year})</p>
-                      <p className="text-sm text-slate-500 mt-1">📞 {member.contactNumber}</p>
-                      {member.instagram && (
-                        <p className="text-sm text-slate-500">📷 @{member.instagram}</p>
-                      )}
-                      {member.githubLink && (
-                        <p className="text-sm text-slate-500">🔗 GitHub</p>
-                      )}
+                      <Avatar name={member.name} tone="orange" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-slate-800 truncate">{member.name}</p>
+                        <p className="text-slate-500 text-sm">{member.branch} · {member.year}</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-500">
+                          {member.contactNumber && <span>📞 {member.contactNumber}</span>}
+                          {member.instagram && <span>📷 @{member.instagram}</span>}
+                          {member.githubLink && <span>🔗 GitHub</span>}
+                        </div>
 
-                      <div className="flex flex-wrap gap-1 mt-3">
-                        {[...member.skills, ...(member.otherSkills ? member.otherSkills.split(',').map(s => s.trim()) : [])].map(skill => (
-                          <span key={skill} className="bg-gray-200 text-blue-900 border border-gray-300 text-xs font-bold px-2 py-1 rounded-full">
-                            {skill}
-                          </span>
-                        ))}
+                        {[...(member.skills || []), ...(member.otherSkills ? member.otherSkills.split(',').map(s => s.trim()).filter(Boolean) : [])].length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
+                            {[...(member.skills || []), ...(member.otherSkills ? member.otherSkills.split(',').map(s => s.trim()).filter(Boolean) : [])].map(skill => (
+                              <span key={skill} className="bg-white text-blue-900 border border-gray-300 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}
@@ -78,7 +124,7 @@ const TeamDetailsModal = ({ team, onClose }) => {
           <div className="p-4 bg-gray-50 border-t border-gray-200 sticky bottom-0 flex justify-end rounded-b-3xl">
             <motion.button
               onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-slate-800 px-8 py-3 rounded-2xl font-bold transition-colors shadow-sm"
+              className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 rounded-2xl font-bold transition-colors shadow-sm"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -116,17 +162,23 @@ const IndividualDetailModal = ({ individual, teamName, onClose }) => {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white border border-gray-200 rounded-3xl shadow-2xl max-w-lg w-full text-left max-h-[90vh] overflow-y-auto"
+          className="sih-modal-scroll bg-white border border-gray-200 rounded-3xl shadow-2xl max-w-lg w-full text-left max-h-[90vh] overflow-y-auto"
+          data-lenis-prevent
           onClick={e => e.stopPropagation()}
         >
-          <div className="p-6 md:p-8 sticky top-0 bg-white/90 backdrop-blur-lg border-b border-gray-200 rounded-t-3xl flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-blue-900">{individual.name}</h2>
-              <p className="text-slate-600 mt-1">{individual.branch} - {individual.year}</p>
+          <style>{scrollbarStyles}</style>
+
+          <div className="p-6 md:p-8 sticky top-0 z-10 bg-gradient-to-r from-blue-900 to-blue-800 rounded-t-3xl flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full border-2 border-orange-300 bg-white/10 text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
+              {getInitials(individual.name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-black text-white truncate">{individual.name}</h2>
+              <p className="text-blue-100 text-sm mt-0.5">{individual.branch} · {individual.year}</p>
             </div>
             {individual.teamId && (
-              <span className="bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
-                {teamName ? `Team: ${teamName}` : 'In a team'}
+              <span className="bg-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                {teamName ? teamName : 'In a team'}
               </span>
             )}
           </div>
@@ -134,7 +186,7 @@ const IndividualDetailModal = ({ individual, teamName, onClose }) => {
           <div className="p-6 md:p-8 space-y-6">
             {allSkills.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-orange-500 uppercase tracking-wide mb-3">Skills</h3>
+                <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Skills</h3>
                 <div className="flex flex-wrap gap-2">
                   {allSkills.map(skill => (
                     <span key={skill} className="bg-orange-50 text-orange-700 border border-orange-200 text-xs font-bold px-2.5 py-1 rounded-full">
@@ -147,44 +199,49 @@ const IndividualDetailModal = ({ individual, teamName, onClose }) => {
 
             {individual.hasDeployed && individual.productLink && (
               <div>
-                <h3 className="text-sm font-bold text-orange-500 uppercase tracking-wide mb-3">Deployed Project</h3>
-                <span className="text-xs bg-green-50 border border-green-200 text-green-700 font-bold px-2 py-1 rounded-full">
+                <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Deployed Project</h3>
+                <a
+                  href={individual.productLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm bg-green-50 border border-green-200 text-green-700 font-semibold px-3 py-1.5 rounded-full hover:bg-green-100 transition-colors"
+                >
                   💻 {individual.productLink}
-                </span>
+                </a>
               </div>
             )}
 
             <div>
-              <h3 className="text-sm font-bold text-orange-500 uppercase tracking-wide mb-3">Contact</h3>
+              <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Contact</h3>
               {hasAnyContact ? (
-                <div className="space-y-3 text-slate-800 bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div className="space-y-3 text-slate-800 bg-gray-50 border border-gray-200 rounded-2xl p-4">
                   {individual.contactNumber && (
                     <p className="flex items-center gap-3">
                       <span>📞</span>
-                      <span className="font-mono font-semibold">{individual.contactNumber}</span>
+                      <span className="font-mono font-semibold text-sm">{individual.contactNumber}</span>
                     </p>
                   )}
                   {individual.instagram && (
                     <p className="flex items-center gap-3">
                       <span>📷</span>
-                      <span className="font-mono font-semibold">@{individual.instagram}</span>
+                      <span className="font-mono font-semibold text-sm">@{individual.instagram}</span>
                     </p>
                   )}
                   {individual.discord && (
                     <p className="flex items-center gap-3">
                       <span>💬</span>
-                      <span className="font-mono font-semibold">{individual.discord}</span>
+                      <span className="font-mono font-semibold text-sm">{individual.discord}</span>
                     </p>
                   )}
                   {individual.github && (
                     <p className="flex items-center gap-3">
                       <span>🔗</span>
-                      <span className="font-mono font-semibold">{individual.github}</span>
+                      <span className="font-mono font-semibold text-sm">{individual.github}</span>
                     </p>
                   )}
                 </div>
               ) : (
-                <p className="text-slate-500">This participant hasn't provided public contact details.</p>
+                <p className="text-slate-500 text-sm">This participant hasn't provided public contact details.</p>
               )}
             </div>
           </div>
@@ -192,7 +249,7 @@ const IndividualDetailModal = ({ individual, teamName, onClose }) => {
           <div className="p-4 bg-gray-50 border-t border-gray-200 sticky bottom-0 flex justify-end rounded-b-3xl">
             <motion.button
               onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-slate-800 px-8 py-3 rounded-2xl font-bold transition-colors shadow-sm"
+              className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 rounded-2xl font-bold transition-colors shadow-sm"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -217,11 +274,7 @@ const TeamRowCard = ({ team, index, onClick }) => (
     whileHover={{ scale: 1.01 }}
     whileTap={{ scale: 0.99 }}
   >
-    <div className="w-11 h-11 rounded-xl border-2 border-orange-400 bg-orange-50 flex items-center justify-center flex-shrink-0">
-      <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-      </svg>
-    </div>
+    <Avatar name={team.teamName} tone="orange" />
     <div className="min-w-0 flex-1">
       <p className="font-bold text-blue-900 truncate">{team.teamName}</p>
       <p className="text-sm text-slate-500 truncate">Leader: {team.leader?.name}</p>
@@ -243,11 +296,7 @@ const IndividualRowCard = ({ individual, index, teamName, onClick }) => (
     whileHover={{ scale: 1.01 }}
     whileTap={{ scale: 0.99 }}
   >
-    <div className="w-11 h-11 rounded-xl border-2 border-orange-400 bg-orange-50 flex items-center justify-center flex-shrink-0">
-      <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-      </svg>
-    </div>
+    <Avatar name={individual.name} tone="blue" />
     <div className="min-w-0 flex-1">
       <p className="font-bold text-blue-900 truncate">{individual.name}</p>
       <p className="text-sm text-slate-500 truncate">{individual.branch} - {individual.year}</p>
@@ -377,7 +426,11 @@ const SIHRegisteredPage = ({ teams, individuals, isLoading }) => {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden mt-6"
               >
-                <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-3 max-h-[70vh] overflow-y-auto">
+                <div
+                  className="sih-modal-scroll bg-white rounded-3xl border border-gray-200 shadow-sm p-6 space-y-3 max-h-[70vh] overflow-y-auto"
+                  data-lenis-prevent
+                >
+                  <style>{scrollbarStyles}</style>
                   {activeSection === 'teams' ? (
                     teams.length > 0 ? (
                       teams.map((team, index) => (

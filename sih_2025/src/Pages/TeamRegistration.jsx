@@ -17,11 +17,11 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
             githubLink: '',
         },
         members: [
-            { name: '', year: '', branch: '' },
-            { name: '', year: '', branch: '' },
-            { name: '', year: '', branch: '' },
-            { name: '', year: '', branch: '' },
-            { name: '', year: '', branch: '' },
+            { name: '', year: '', branch: '', phone: '' },
+            { name: '', year: '', branch: '', phone: '' },
+            { name: '', year: '', branch: '', phone: '' },
+            { name: '', year: '', branch: '', phone: '' },
+            { name: '', year: '', branch: '', phone: '' },
         ],
     });
 
@@ -45,6 +45,12 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const filledMembers = form.members.filter(m => m.name.trim() !== '');
+        if (filledMembers.length < 1) {
+            showAlert('Team must have at least 2 members (1 leader + 1 member minimum).');
+            return;
+        }
+
         try {
             const user = auth.currentUser;
             if (!user) {
@@ -65,10 +71,16 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
                     branch: form.leader.branch,
                     contactNumber: form.leader.phone,
                     githubLink: form.leader.githubLink || '',
+                    skills: [],
                 },
 
-                members: form.members.filter(m => m.name.trim() !== ''),
-
+                members: filledMembers.map(m => ({
+                    name: m.name,
+                    year: m.year,
+                    branch: m.branch,
+                    contactNumber: m.phone || '',
+                    skills: [],
+                })),
                 createdAt: serverTimestamp(),
             });
 
@@ -178,10 +190,11 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
                     <div className="border-t border-gray-200 pt-6">
                         <h2 className="text-lg font-bold text-blue-900 mb-4">Team Members</h2>
                         {form.members.map((member, i) => (
-                            <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div key={i} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                 <input
                                     type="text"
-                                    placeholder={`Member ${i + 1} Name`}
+                                    placeholder={`Member ${i + 1} Name${i === 0 ? '' : ' (Optional)'}`}
+                                    required={i === 0}
                                     value={member.name}
                                     onChange={(e) => updateMember(i, 'name', e.target.value)}
                                     className="border border-gray-300 rounded-xl px-4 py-2"
@@ -189,6 +202,7 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
                                 <input
                                     type="text"
                                     placeholder="Year"
+                                    required={i === 0}
                                     value={member.year}
                                     onChange={(e) => updateMember(i, 'year', e.target.value)}
                                     className="border border-gray-300 rounded-xl px-4 py-2"
@@ -196,21 +210,30 @@ export default function TeamRegistration({ showToast, showAlert, setPage, refetc
                                 <input
                                     type="text"
                                     placeholder="Branch"
+                                    required={i === 0}
                                     value={member.branch}
                                     onChange={(e) => updateMember(i, 'branch', e.target.value)}
                                     className="border border-gray-300 rounded-xl px-4 py-2"
                                 />
+                                <input
+                                    type="tel"
+                                    placeholder={`Phone${i === 0 ? '' : ' (Optional)'}`}
+                                    required={i === 0}
+                                    value={member.phone}
+                                    onChange={(e) => updateMember(i, 'phone', e.target.value)}
+                                    className="border border-gray-300 rounded-xl px-4 py-2"
+                                />
                             </div>
                         ))}
-                    </div>
 
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-semibold transition-colors"
-                    >
-                        {submitting ? 'Registering...' : 'Register Team'}
-                    </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-semibold transition-colors"
+                        >
+                            {submitting ? 'Registering...' : 'Register Team'}
+                        </button>
+                    </div>
                 </motion.form>
             </div>
         </div>
