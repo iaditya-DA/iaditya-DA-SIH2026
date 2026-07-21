@@ -6,9 +6,10 @@ import {
     where,
     onSnapshot,
     doc,
-    getDoc,
     updateDoc,
-    arrayUnion
+    arrayUnion,
+    runTransaction,
+    getDocs
 } from 'firebase/firestore';
 import { auth, db } from './firebaseClient.js';
 
@@ -123,32 +124,50 @@ export default function MyRequestsPage({ showToast, showAlert }) {
             setActingOn(req.id);
 
             const teamRef = doc(db, 'teams', req.teamId);
-            const teamSnap = await getDoc(teamRef);
-            const teamData = teamSnap.data();
-            const currentSize = 1 + (teamData.members?.length || 0);
+            const requestRef = doc(db, 'requests', req.id);
+            const individualRef = doc(db, 'users', req.individualUid);
 
-            if (currentSize >= MAX_TEAM_SIZE) {
-                showAlert && showAlert('This team is already full.');
-                return;
-            }
+            await runTransaction(db, async (transaction) => {
+                const [teamSnap, requestSnap, individualSnap] = await Promise.all([
+                    transaction.get(teamRef),
+                    transaction.get(requestRef),
+                    transaction.get(individualRef),
+                ]);
 
-            await updateDoc(teamRef, {
-                members: arrayUnion({
-                    uid: req.individualUid,
-                    name: req.individualName,
-                    year: req.individualYear,
-                    branch: req.individualBranch,
-                    contactNumber: req.individualContact || '',
-                    skills: req.individualSkills || [],
-                }),
+                if (!requestSnap.exists() || requestSnap.data().status !== 'pending') {
+                    throw new Error('This request is no longer valid — it may have already been handled.');
+                }
+                if (!teamSnap.exists()) {
+                    throw new Error('This team no longer exists.');
+                }
+
+                const teamData = teamSnap.data();
+                const currentSize = 1 + (teamData.members?.length || 0);
+                if (currentSize >= MAX_TEAM_SIZE) {
+                    throw new Error('This team is already full.');
+                }
+
+                if (!individualSnap.exists() || individualSnap.data().teamId) {
+                    throw new Error(`${req.individualName} has already joined another team.`);
+                }
+
+                transaction.update(teamRef, {
+                    members: arrayUnion({
+                        uid: req.individualUid,
+                        name: req.individualName,
+                        year: req.individualYear,
+                        branch: req.individualBranch,
+                        contactNumber: req.individualContact || '',
+                        skills: req.individualSkills || [],
+                    }),
+                });
+                transaction.update(individualRef, { teamId: req.teamId });
+                transaction.update(requestRef, { status: 'accepted' });
             });
 
-            await updateDoc(doc(db, 'users', req.individualUid), { teamId: req.teamId });
-            await updateDoc(doc(db, 'requests', req.id), { status: 'accepted' });
-
-            // Note: cancelling other pending requests still needs a one-time read/write —
-            // this part isn't a live-listened list, so a manual query here is fine and rare.
-            const { getDocs } = await import('firebase/firestore');
+            // Best-effort cleanup — not transactional. If a stale request slips
+            // through here, the transaction's own teamId check above will safely
+            // reject it next time someone tries to accept it.
             const otherReqsSnap = await getDocs(
                 query(
                     collection(db, 'requests'),
@@ -166,7 +185,7 @@ export default function MyRequestsPage({ showToast, showAlert }) {
 
         } catch (err) {
             console.error('Failed to accept request:', err);
-            showAlert && showAlert('Failed to accept request.');
+            showAlert && showAlert(err.message || 'Failed to accept request.');
         } finally {
             setActingOn(null);
         }
