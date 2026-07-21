@@ -259,6 +259,12 @@ const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'ind
 const REGISTRATION_ENTRY_PAGES = ['registration-choice', 'team-register', 'individual-register'];
 const REGISTERED_ONLY_PAGES = ['find-teammates', 'my-requests'];
 
+// Pages that actually need the teams/individuals data loaded.
+// The Firestore listeners below only attach while `page` is one of these,
+// so we don't pay for reads on every page load — only when someone
+// actually opens the Teams list or the Admin panel.
+const PARTICIPANTS_DATA_PAGES = ['registered', 'admin'];
+
 const SIHFluidWebsiteInner = () => {
   useSmoothScroll();
   const { user, isRegistered, isAdmin, loading: authLoading } = useAuth();
@@ -283,7 +289,14 @@ const SIHFluidWebsiteInner = () => {
     });
     return unsub;
   }, []);
+
+  // Firestore listeners for teams + individuals only stay attached while the
+  // user is actually on a page that needs them ("Teams" list or Admin panel).
+  // Navigating away cleans them up, so we're not holding an always-on
+  // real-time connection (and racking up reads) on every page of the site.
   useEffect(() => {
+    if (!PARTICIPANTS_DATA_PAGES.includes(page)) return;
+
     setIsLoading(true);
 
     const unsubTeams = onSnapshot(
@@ -313,7 +326,7 @@ const SIHFluidWebsiteInner = () => {
       unsubTeams();
       unsubIndividuals();
     };
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     if (authLoading) return;
