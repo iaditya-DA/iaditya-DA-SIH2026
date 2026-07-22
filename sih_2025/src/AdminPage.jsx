@@ -573,20 +573,32 @@ export default function AdminPage({ setPage }) {
                                     <tbody>
                                         {requests.length === 0 ? (
                                             <tr><td colSpan={4} className="text-center text-slate-400 py-10">No requests yet.</td></tr>
-                                        ) : requests.map((r, i) => (
-                                            <tr key={r.id} className={`border-b border-gray-100 hover:bg-orange-50/40 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                                <td className="p-3.5 text-blue-900 font-semibold">{r.individualName || '—'}</td>
-                                                <td className="p-3.5 text-slate-600">{r.teamName || '—'}</td>
-                                                <td className="p-3.5 text-slate-500 text-xs">
-                                                    {r.initiatedBy === 'leader' ? '📤 Leader → Individual' : '📥 Individual → Team'}
-                                                </td>
-                                                <td className="p-3.5">
-                                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize border ${statusStyles[r.status] || statusStyles.pending}`}>
-                                                        {r.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        ) : requests.map((r, i) => {
+                                            const isPeer = r.type === 'peer_teamup' || r.initiatedBy === 'peer';
+                                            const isLeader = r.initiatedBy === 'leader';
+                                            const indName = r.individualName || r.fromName || '—';
+                                            const tName = r.proposedTeam?.teamName || r.proposedTeamName || r.teamName || '—';
+                                            const directionLabel = isPeer
+                                                ? `🤝 Peer → ${r.toName || 'Peer'}`
+                                                : isLeader
+                                                    ? '📤 Leader → Individual'
+                                                    : '📥 Individual → Team';
+
+                                            return (
+                                                <tr key={r.id} className={`border-b border-gray-100 hover:bg-orange-50/40 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                                    <td className="p-3.5 text-blue-900 font-semibold">{indName}</td>
+                                                    <td className="p-3.5 text-slate-700 font-medium">{tName}</td>
+                                                    <td className="p-3.5 text-slate-500 text-xs font-medium">
+                                                        {directionLabel}
+                                                    </td>
+                                                    <td className="p-3.5">
+                                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize border ${statusStyles[r.status] || statusStyles.pending}`}>
+                                                            {r.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>

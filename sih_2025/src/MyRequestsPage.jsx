@@ -298,20 +298,20 @@ export default function MyRequestsPage({ showToast, showAlert }) {
                     problemStatement: req.proposedTeam?.problemStatement || '',
                     githubLink: req.proposedTeam?.githubLink || '',
                     leader: {
-                        uid: currentUser.uid,
-                        name: toData.name,
-                        year: toData.year,
-                        branch: toData.branch,
-                        contactNumber: toData.contactNumber || '',
-                        skills: toData.skills || [],
-                    },
-                    members: [{
                         uid: req.fromUid,
                         name: fromData.name,
                         year: fromData.year,
                         branch: fromData.branch,
                         contactNumber: fromData.contactNumber || '',
                         skills: fromData.skills || [],
+                    },
+                    members: [{
+                        uid: currentUser.uid,
+                        name: toData.name,
+                        year: toData.year,
+                        branch: toData.branch,
+                        contactNumber: toData.contactNumber || '',
+                        skills: toData.skills || [],
                     }],
                     createdAt: serverTimestamp(),
                 });
