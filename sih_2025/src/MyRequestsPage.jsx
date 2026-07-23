@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     collection,
     query,
@@ -15,6 +15,167 @@ import {
 import { auth, db } from './firebaseClient.js';
 
 const MAX_TEAM_SIZE = 6;
+
+// ---------------------------------------------------------------------------
+// Shared visual building blocks — mirrors the tokens used on the Registered
+// Participants page (orange/blue chips, hairline dividers, dashed empty
+// states) so the whole app reads as one product instead of separate screens.
+// ---------------------------------------------------------------------------
+
+const getInitials = (name = '') =>
+    name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+
+const Avatar = ({ name, tone = 'orange', size = 'md' }) => {
+    const tones = {
+        orange: 'bg-orange-100 text-orange-700 border-orange-300',
+        blue: 'bg-blue-100 text-blue-800 border-blue-300',
+    };
+    const sizes = {
+        sm: 'w-9 h-9 text-xs',
+        md: 'w-11 h-11 text-sm',
+    };
+    return (
+        <div className={`rounded-full border-2 flex items-center justify-center font-bold flex-shrink-0 ${tones[tone]} ${sizes[size]}`}>
+            {getInitials(name)}
+        </div>
+    );
+};
+
+const Icon = {
+    check: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+    ),
+    cross: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    ),
+    trash: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0-1 13a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7h12z" />
+        </svg>
+    ),
+    clock: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    team: (
+        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+        </svg>
+    ),
+    mail: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16v12H4V6zm0 0l8 7 8-7" />
+        </svg>
+    ),
+    handshake: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2 12l4-4 4 3 4-3 4 3 4-4M6 15l3 3 3-3M12 18l2 2 3-3" />
+        </svg>
+    ),
+    send: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+        </svg>
+    ),
+    link: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5l4-4a3.5 3.5 0 10-5-5l-4 4m-3 3l-4 4a3.5 3.5 0 105 5l4-4M9 15l6-6" />
+        </svg>
+    ),
+};
+
+const SkillTag = ({ children }) => (
+    <span className="bg-orange-50 text-orange-700 border border-orange-200 text-[11px] font-bold px-2.5 py-1 rounded-full">
+        {children}
+    </span>
+);
+
+const StatusBadge = ({ status }) => {
+    const styles = {
+        pending: 'bg-amber-50 text-amber-700 border-amber-200',
+        accepted: 'bg-green-50 text-green-700 border-green-200',
+        rejected: 'bg-red-50 text-red-600 border-red-200',
+        cancelled: 'bg-slate-100 text-slate-500 border-slate-200',
+    };
+    return (
+        <span className={`inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide border rounded-full px-2.5 py-1 ${styles[status] || styles.cancelled}`}>
+            {status === 'pending' && Icon.clock}
+            {status}
+        </span>
+    );
+};
+
+// Icon chip + title + count pill — same pattern as the stat cards on the
+// participants page, so every section opens the same way.
+const SectionHeader = ({ icon, title, count, tone = 'blue' }) => {
+    const chipClasses = tone === 'orange'
+        ? 'bg-orange-50 text-orange-600 border-orange-200'
+        : 'bg-blue-50 text-blue-700 border-blue-200';
+    return (
+        <div className="flex items-center gap-3 mb-4">
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0 ${chipClasses}`}>
+                {icon}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-black text-blue-900">{title}</h2>
+                {typeof count === 'number' && count > 0 && (
+                    <span className="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2.5 py-1">
+                        {count}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const EmptyState = ({ icon, title }) => (
+    <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
+        <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300">
+            {icon}
+        </div>
+        <p className="text-slate-500 font-medium">{title}</p>
+    </div>
+);
+
+const InfoBlock = ({ label, children }) => (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+        <div className="text-sm text-slate-600 break-words">{children}</div>
+    </div>
+);
+
+const RequestCard = ({ children }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-orange-200 transition-colors flex flex-col h-full"
+    >
+        {children}
+    </motion.div>
+);
+
+const ActionButton = ({ children, icon, tone = 'ghost', ...props }) => {
+    const toneClasses = {
+        green: 'bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white',
+        red: 'bg-white border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50',
+        ghost: 'bg-white border border-gray-200 text-slate-600 hover:bg-gray-50 disabled:opacity-50',
+    }[tone];
+    return (
+        <button
+            {...props}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition-colors ${toneClasses}`}
+        >
+            {icon}
+            {children}
+        </button>
+    );
+};
 
 export default function MyRequestsPage({ showToast, showAlert }) {
     const [incomingJoinRequests, setIncomingJoinRequests] = useState([]);
@@ -385,193 +546,231 @@ export default function MyRequestsPage({ showToast, showAlert }) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex justify-center items-center">
-                <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="min-h-screen flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center"
+                >
+                    <motion.div
+                        className="w-16 h-16 border-4 border-orange-400 border-t-transparent rounded-full mx-auto mb-4"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    />
+                    <p className="text-xl text-slate-400">Loading your requests...</p>
+                </motion.div>
             </div>
         );
     }
 
+    const actionableCount = incomingJoinRequests.length + invitesReceived.length + peerReceived.length;
+
     return (
-        <div className="min-h-screen bg-slate-50 px-4 py-10">
-            <div className="max-w-5xl mx-auto space-y-12">
-                <h1 className="text-4xl font-black text-blue-900 text-center">My Requests</h1>
+        <div className="min-h-screen bg-gray-50 px-4 py-10">
+            <div className="max-w-6xl mx-auto">
+                <h1 className="text-4xl md:text-5xl font-black text-blue-900 text-center mb-2">My Requests</h1>
+                <p className="text-center text-sm text-slate-400 mb-3">
+                    Join requests, invites and team-up offers, all in one place.
+                </p>
+                {actionableCount > 0 && (
+                    <div className="flex justify-center mb-10">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-3 py-1.5">
+                            {Icon.clock} {actionableCount} waiting on your response
+                        </span>
+                    </div>
+                )}
+                {actionableCount === 0 && <div className="mb-10" />}
 
-                {myTeam && (
-                    <section>
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4">
-                            Join Requests — {myTeam.teamName} ({1 + (myTeam.members?.length || 0)}/{MAX_TEAM_SIZE})
-                        </h2>
-                        {incomingJoinRequests.length === 0 ? (
-                            <p className="text-slate-500">No incoming join requests.</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    {myTeam && (
+                        <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                            <SectionHeader
+                                icon={Icon.team}
+                                title={`Join Requests — ${myTeam.teamName}`}
+                                count={incomingJoinRequests.length}
+                                tone="orange"
+                            />
+                            <p className="text-xs font-semibold text-slate-400 -mt-3 mb-4">
+                                Team size: {1 + (myTeam.members?.length || 0)}/{MAX_TEAM_SIZE}
+                            </p>
+                            {incomingJoinRequests.length === 0 ? (
+                                <EmptyState icon={Icon.team} title="No incoming join requests." />
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4">
+                                    <AnimatePresence>
+                                        {incomingJoinRequests.map((req) => (
+                                            <RequestCard key={req.id}>
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <Avatar name={req.individualName} tone="orange" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-black text-blue-900 truncate">{req.individualName}</p>
+                                                        <p className="text-sm text-slate-400 truncate">{req.individualBranch} · {req.individualYear}</p>
+                                                    </div>
+                                                </div>
+                                                <InfoBlock label="Contact">{req.individualContact || '—'}</InfoBlock>
+                                                {(req.individualSkills || []).length > 0 && (
+                                                    <div className="flex flex-wrap gap-1.5 mt-3">
+                                                        {req.individualSkills.map((skill, i) => <SkillTag key={i}>{skill}</SkillTag>)}
+                                                    </div>
+                                                )}
+                                                <div className="flex gap-2 mt-4">
+                                                    <ActionButton tone="green" icon={Icon.check} onClick={() => acceptRequest(req)} disabled={actingOn === req.id}>
+                                                        Accept
+                                                    </ActionButton>
+                                                    <ActionButton tone="red" icon={Icon.cross} onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id}>
+                                                        Reject
+                                                    </ActionButton>
+                                                </div>
+                                            </RequestCard>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                        <SectionHeader icon={Icon.mail} title="Team Invites Received" count={invitesReceived.length} />
+                        {invitesReceived.length === 0 ? (
+                            <EmptyState icon={Icon.mail} title="No team invites." />
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {incomingJoinRequests.map((req) => (
-                                    <motion.div
-                                        key={req.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                    >
-                                        <p className="font-semibold text-blue-900 text-lg">{req.individualName}</p>
-                                        <p className="text-sm text-slate-500 mb-2">{req.individualBranch} — {req.individualYear}</p>
-                                        <p className="text-sm text-slate-500 mb-3">Contact: {req.individualContact || '—'}</p>
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {(req.individualSkills || []).map((skill, i) => (
-                                                <span key={i} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">{skill}</span>
-                                            ))}
+                            <div className="grid grid-cols-1 gap-4">
+                                <AnimatePresence>
+                                    {invitesReceived.map((req) => (
+                                        <RequestCard key={req.id}>
+                                            <p className="font-black text-blue-900 text-lg">{req.teamName}</p>
+                                            <p className="text-sm text-slate-400 mb-4">invited you to join their team</p>
+                                            <div className="flex gap-2 mt-auto">
+                                                <ActionButton tone="green" icon={Icon.check} onClick={() => acceptRequest(req)} disabled={actingOn === req.id}>
+                                                    Accept
+                                                </ActionButton>
+                                                <ActionButton tone="red" icon={Icon.cross} onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id}>
+                                                    Reject
+                                                </ActionButton>
+                                            </div>
+                                        </RequestCard>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* ---- Team-Up Requests Received ---- */}
+                    <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                        <SectionHeader icon={Icon.handshake} title="Team-Up Requests Received" count={peerReceived.length} tone="orange" />
+                        {peerReceived.length === 0 ? (
+                            <EmptyState icon={Icon.handshake} title="No team-up requests." />
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                <AnimatePresence>
+                                    {peerReceived.map((req) => (
+                                        <RequestCard key={req.id}>
+                                            <div className="flex items-center gap-3 mb-1">
+                                                <Avatar name={req.fromName} tone="orange" />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-blue-900 truncate">{req.fromName}</p>
+                                                    <p className="text-xs text-slate-400">wants to team up with you</p>
+                                                </div>
+                                            </div>
+                                            <InfoBlock label="Proposed Team">
+                                                <span className="font-semibold text-blue-900">{req.proposedTeam?.teamName}</span>
+                                                {req.proposedTeam?.problemStatement && (
+                                                    <p className="text-slate-500 mt-1">{req.proposedTeam.problemStatement}</p>
+                                                )}
+                                                {req.proposedTeam?.githubLink && (
+                                                    <a
+                                                        href={req.proposedTeam.githubLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 mt-2 text-orange-600 hover:text-orange-700 font-semibold break-all"
+                                                    >
+                                                        {Icon.link} {req.proposedTeam.githubLink}
+                                                    </a>
+                                                )}
+                                            </InfoBlock>
+                                            <div className="flex gap-2 mt-4">
+                                                <ActionButton tone="green" icon={Icon.check} onClick={() => acceptPeerRequest(req)} disabled={actingOn === req.id}>
+                                                    {actingOn === req.id ? 'Creating…' : 'Accept'}
+                                                </ActionButton>
+                                                <ActionButton tone="red" icon={Icon.cross} onClick={() => rejectPeerRequest(req.id)} disabled={actingOn === req.id}>
+                                                    Reject
+                                                </ActionButton>
+                                            </div>
+                                        </RequestCard>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                        <SectionHeader icon={Icon.send} title="Requests Sent" count={sentRequests.length} />
+                        {sentRequests.length === 0 ? (
+                            <EmptyState icon={Icon.send} title="No sent requests." />
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                                {sentRequests.map((req) => (
+                                    <RequestCard key={req.id}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="font-black text-blue-900 truncate">{req.teamName}</p>
+                                            <StatusBadge status={req.status} />
                                         </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
-                                            <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                        </div>
-                                    </motion.div>
+                                    </RequestCard>
                                 ))}
                             </div>
                         )}
                     </section>
-                )}
 
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team Invites Received</h2>
-                    {invitesReceived.length === 0 ? (
-                        <p className="text-slate-500">No team invites.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {invitesReceived.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900 text-lg">{req.teamName}</p>
-                                    <p className="text-sm text-slate-500 mb-4">invited you to join their team</p>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => acceptRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">Accept</button>
-                                        <button onClick={() => rejectRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* ---- Team-Up Requests Received ---- */}
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team-Up Requests Received</h2>
-                    {peerReceived.length === 0 ? (
-                        <p className="text-slate-500">No team-up requests.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {peerReceived.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900 text-lg">{req.fromName}</p>
-                                    <p className="text-sm text-slate-500 mb-1">wants to team up with you</p>
-                                    <p className="font-medium text-blue-900 mt-2">{req.proposedTeam?.teamName}</p>
-                                    <p className="text-sm text-slate-500 mb-2">{req.proposedTeam?.problemStatement}</p>
-                                    {req.proposedTeam?.githubLink && (
-                                        <a
-                                            href={req.proposedTeam.githubLink}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-orange-600 underline break-all"
-                                        >
-                                            {req.proposedTeam.githubLink}
-                                        </a>
-                                    )}
-                                    <div className="flex gap-2 mt-4">
-                                        <button onClick={() => acceptPeerRequest(req)} disabled={actingOn === req.id} className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2 rounded-xl font-semibold">
-                                            {actingOn === req.id ? 'Creating...' : 'Accept'}
-                                        </button>
-                                        <button onClick={() => rejectPeerRequest(req.id)} disabled={actingOn === req.id} className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white py-2 rounded-xl font-semibold">Reject</button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Requests Sent</h2>
-                    {sentRequests.length === 0 ? (
-                        <p className="text-slate-500">No sent requests.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {sentRequests.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900">{req.teamName}</p>
-                                    <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* ---- Team-Up Requests Sent ---- */}
-                <section>
-                    <h2 className="text-2xl font-bold text-blue-900 mb-4">Team-Up Requests Sent</h2>
-                    {peerSent.length === 0 ? (
-                        <p className="text-slate-500">No team-up requests sent yet.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {peerSent.map((req) => (
-                                <motion.div
-                                    key={req.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                >
-                                    <p className="font-semibold text-blue-900">{req.toName}</p>
-                                    <p className="text-sm text-slate-500 mb-1">{req.proposedTeam?.teamName}</p>
-                                    <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
-                                    {req.status === 'pending' && (
-                                        <button onClick={() => cancelPeerRequest(req.id)} disabled={actingOn === req.id} className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl font-semibold text-sm">
-                                            Cancel Request
-                                        </button>
-                                    )}
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {myTeam && (
-                    <section>
-                        <h2 className="text-2xl font-bold text-blue-900 mb-4">Invites Sent</h2>
-                        {invitesSent.length === 0 ? (
-                            <p className="text-slate-500">No invites sent yet.</p>
+                    {/* ---- Team-Up Requests Sent ---- */}
+                    <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                        <SectionHeader icon={Icon.handshake} title="Team-Up Requests Sent" count={peerSent.length} tone="orange" />
+                        {peerSent.length === 0 ? (
+                            <EmptyState icon={Icon.handshake} title="No team-up requests sent yet." />
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {invitesSent.map((req) => (
-                                    <motion.div
-                                        key={req.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5"
-                                    >
-                                        <p className="font-semibold text-blue-900">{req.individualName}</p>
-                                        <p className="text-sm mt-2">Status: <span className="font-medium capitalize">{req.status}</span></p>
+                            <div className="grid grid-cols-1 gap-4">
+                                {peerSent.map((req) => (
+                                    <RequestCard key={req.id}>
+                                        <div className="flex items-center justify-between gap-3 mb-1">
+                                            <p className="font-black text-blue-900 truncate">{req.toName}</p>
+                                            <StatusBadge status={req.status} />
+                                        </div>
+                                        <p className="text-sm text-slate-400 truncate mb-3">{req.proposedTeam?.teamName}</p>
                                         {req.status === 'pending' && (
-                                            <button onClick={() => cancelInvite(req.id)} disabled={actingOn === req.id} className="mt-3 w-full bg-gray-200 hover:bg-gray-300 text-slate-700 py-2 rounded-xl font-semibold text-sm">
-                                                Cancel Invite
-                                            </button>
+                                            <ActionButton tone="ghost" icon={Icon.trash} onClick={() => cancelPeerRequest(req.id)} disabled={actingOn === req.id}>
+                                                Cancel Request
+                                            </ActionButton>
                                         )}
-                                    </motion.div>
+                                    </RequestCard>
                                 ))}
                             </div>
                         )}
                     </section>
-                )}
+
+                    {myTeam && (
+                        <section className="bg-white border border-gray-200 rounded-3xl p-6">
+                            <SectionHeader icon={Icon.send} title="Invites Sent" count={invitesSent.length} tone="orange" />
+                            {invitesSent.length === 0 ? (
+                                <EmptyState icon={Icon.send} title="No invites sent yet." />
+                            ) : (
+                                <div className="grid grid-cols-1 gap-4">
+                                    {invitesSent.map((req) => (
+                                        <RequestCard key={req.id}>
+                                            <div className="flex items-center justify-between gap-3 mb-3">
+                                                <p className="font-black text-blue-900 truncate">{req.individualName}</p>
+                                                <StatusBadge status={req.status} />
+                                            </div>
+                                            {req.status === 'pending' && (
+                                                <ActionButton tone="ghost" icon={Icon.trash} onClick={() => cancelInvite(req.id)} disabled={actingOn === req.id}>
+                                                    Cancel Invite
+                                                </ActionButton>
+                                            )}
+                                        </RequestCard>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    )}
+                </div>
             </div>
         </div>
     );
