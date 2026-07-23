@@ -12,7 +12,7 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import { auth, db } from './firebaseClient.js';
-import { X, Phone, Mail, User } from 'lucide-react';
+import { X, Phone, Mail, User, Eye, Users, Target } from 'lucide-react';
 
 const GithubIcon = ({ className = "w-3.5 h-3.5" }) => (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -53,13 +53,14 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
     const [teamDraft, setTeamDraft] = useState(null); // reused team details once filled once
     const [showTeamModal, setShowTeamModal] = useState(false);
     const [selectedUserModal, setSelectedUserModal] = useState(null);
+    const [selectedTeamModal, setSelectedTeamModal] = useState(null);
     const [pendingTarget, setPendingTarget] = useState(null); // individual we're about to send to, once modal is submitted
     const [formTeamName, setFormTeamName] = useState('');
     const [formProblemStatement, setFormProblemStatement] = useState('');
     const [formGithubLink, setFormGithubLink] = useState('');
 
     useEffect(() => {
-        if (selectedUserModal) {
+        if (selectedUserModal || selectedTeamModal) {
             document.body.style.overflow = 'hidden';
             document.documentElement.style.overflow = 'hidden';
         } else {
@@ -70,7 +71,7 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
         };
-    }, [selectedUserModal]);
+    }, [selectedUserModal, selectedTeamModal]);
 
     const [loading, setLoading] = useState(true);
     const [sendingTo, setSendingTo] = useState(null);
@@ -535,6 +536,208 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
         document.body
     );
 
+    const teamPortalJSX = typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+            {selectedTeamModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] touch-none overscroll-none"
+                    onClick={() => setSelectedTeamModal(null)}
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        onClick={(e) => e.stopPropagation()}
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        className="bg-white rounded-3xl w-full max-w-lg h-[82vh] max-h-[640px] flex flex-col shadow-2xl border border-slate-100 relative overflow-hidden my-auto pointer-events-auto"
+                    >
+                        {/* Fixed Header */}
+                        <div className="p-5 md:p-6 pb-4 border-b border-slate-100 relative shrink-0 bg-white">
+                            <button
+                                onClick={() => setSelectedTeamModal(null)}
+                                className="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-gradient-to-br from-orange-500 to-orange-600 text-white font-black text-2xl flex items-center justify-center shadow-md shrink-0">
+                                    {selectedTeamModal.teamName ? selectedTeamModal.teamName.charAt(0).toUpperCase() : 'T'}
+                                </div>
+                                <div className="min-w-0 pr-8">
+                                    <h3 className="text-xl md:text-2xl font-black text-blue-900 truncate">{selectedTeamModal.teamName}</h3>
+                                    <div className="flex flex-wrap gap-2 mt-1.5">
+                                        <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200/80 rounded-full text-xs font-bold">
+                                            {(1 + (selectedTeamModal.members?.length || 0))}/{MAX_TEAM_SIZE} Members
+                                        </span>
+                                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">
+                                            Leader: {selectedTeamModal.leader?.name ? selectedTeamModal.leader.name.split(' ')[0] : 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Scrollable Content Body */}
+                        <div
+                            className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-5 md:p-6 space-y-4"
+                            onWheel={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
+                        >
+                            {/* Problem Statement Card */}
+                            <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 space-y-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <Target className="w-4 h-4 text-orange-600 shrink-0" />
+                                    <p className="text-xs font-bold text-orange-900 uppercase tracking-wider">Problem Statement</p>
+                                </div>
+                                <p className="text-sm text-slate-700 leading-relaxed font-medium bg-white/80 p-3 rounded-xl border border-orange-100/60 shadow-2xs">
+                                    {selectedTeamModal.problemStatement || 'No problem statement set'}
+                                </p>
+                            </div>
+
+                            {/* Team Leader Section */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-lg bg-blue-900 text-white flex items-center justify-center font-bold text-xs">
+                                            L
+                                        </div>
+                                        <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Team Leader</span>
+                                    </div>
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-800 rounded-md text-[11px] font-bold border border-blue-100">
+                                        {selectedTeamModal.leader?.branch || 'Branch N/A'} • {selectedTeamModal.leader?.year ? (selectedTeamModal.leader.year.toString().toLowerCase().includes('year') ? selectedTeamModal.leader.year : `${selectedTeamModal.leader.year} Year`) : 'Year N/A'}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-base font-bold text-slate-800">{selectedTeamModal.leader?.name || 'Unknown'}</h4>
+                                </div>
+
+                                {/* Leader Contacts & Socials */}
+                                <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-200/60">
+                                    {(selectedTeamModal.leader?.contactNumber || selectedTeamModal.leader?.phone) && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+                                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span>{selectedTeamModal.leader.contactNumber || selectedTeamModal.leader.phone}</span>
+                                        </div>
+                                    )}
+
+                                    {selectedTeamModal.leader?.email && (
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+                                            <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span>{selectedTeamModal.leader.email}</span>
+                                        </div>
+                                    )}
+
+                                    {selectedTeamModal.leader?.githubLink && (
+                                        <a
+                                            href={selectedTeamModal.leader.githubLink.startsWith('http') ? selectedTeamModal.leader.githubLink : `https://${selectedTeamModal.leader.githubLink}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:text-blue-900 hover:border-blue-300 transition-colors"
+                                        >
+                                            <GithubIcon className="w-3.5 h-3.5" />
+                                            GitHub
+                                        </a>
+                                    )}
+                                </div>
+
+                                {selectedTeamModal.leader?.skills && selectedTeamModal.leader.skills.length > 0 && (
+                                    <div className="pt-2 border-t border-slate-200/60">
+                                        <p className="text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Skills</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedTeamModal.leader.skills.map((skill, i) => (
+                                                <span key={i} className="px-2.5 py-1 bg-orange-50 text-orange-700 rounded-xl text-xs font-medium border border-orange-100">
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Team Members Section */}
+                            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        Team Members ({(selectedTeamModal.members?.filter(m => m.name)?.length || 0)})
+                                    </p>
+                                </div>
+
+                                {selectedTeamModal.members && selectedTeamModal.members.filter(m => m.name).length > 0 ? (
+                                    <div className="space-y-2">
+                                        {selectedTeamModal.members.filter(m => m.name).map((member, idx) => (
+                                            <div key={idx} className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs space-y-1.5">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-bold text-blue-900">{member.name}</span>
+                                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[11px] font-semibold border border-slate-200/60">
+                                                        {member.branch || 'Branch N/A'} • {member.year ? (member.year.toString().toLowerCase().includes('year') ? member.year : `${member.year} Year`) : 'Year N/A'}
+                                                    </span>
+                                                </div>
+
+                                                {member.contactNumber && (
+                                                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                                        <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                                        <span>{member.contactNumber}</span>
+                                                    </div>
+                                                )}
+
+                                                {member.skills && member.skills.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 pt-1">
+                                                        {member.skills.map((s, i) => (
+                                                            <span key={i} className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded-lg text-[11px] font-medium border border-orange-100/70">
+                                                                {s}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white p-3 rounded-xl border border-dashed border-slate-200 text-center">
+                                        <p className="text-xs text-slate-400 italic">No additional team members joined yet</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Fixed Footer Action Button */}
+                        <div className="p-4 md:p-5 bg-white border-t border-slate-100 shrink-0">
+                            {(() => {
+                                const currentSize = 1 + (selectedTeamModal.members?.length || 0);
+                                const isFull = currentSize >= MAX_TEAM_SIZE;
+                                const alreadyRequested = myPendingTeamIds.has(selectedTeamModal.id);
+
+                                return (
+                                    <button
+                                        onClick={() => {
+                                            const team = selectedTeamModal;
+                                            setSelectedTeamModal(null);
+                                            sendJoinRequest(team);
+                                        }}
+                                        disabled={sendingTo === selectedTeamModal.id || isFull || alreadyRequested}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-bold transition-all shadow-md active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer"
+                                    >
+                                        {sendingTo === selectedTeamModal.id ? 'Sending...' : isFull ? 'Team Full' : alreadyRequested ? 'Already Requested' : `Send Join Request`}
+                                    </button>
+                                );
+                            })()}
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>,
+        document.body
+    );
+
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex justify-center items-center">
@@ -718,13 +921,20 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto pt-2">
+                                        <div className="mt-auto pt-2 space-y-2">
                                             <button
                                                 onClick={() => sendJoinRequest(team)}
                                                 disabled={sendingTo === team.id || isFull || alreadyRequested}
                                                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-3 rounded-2xl font-semibold transition-all duration-200 shadow-xs hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed cursor-pointer text-sm"
                                             >
                                                 {sendingTo === team.id ? 'Sending...' : isFull ? 'Team Full' : alreadyRequested ? 'Requested' : 'Send Join Request'}
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedTeamModal(team)}
+                                                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-2xl font-semibold transition-all text-xs cursor-pointer flex items-center justify-center gap-1.5"
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                View Details
                                             </button>
                                         </div>
                                     </motion.div>
@@ -842,6 +1052,7 @@ export default function FindTeammatesPage({ showToast, showAlert }) {
             </div>
 
             {userPortalJSX}
+            {teamPortalJSX}
 
             {/* ---- Team details modal ---- */}
             <AnimatePresence>
