@@ -120,6 +120,27 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
                 className="h-full w-full object-cover"
               />
             </div>
+
+            {/* Cute circular download badge — same size as the logo above it,
+                so it reads as part of the logo cluster rather than a random
+                button. Soft ping ring draws the eye; `download` on the <a>
+                saves the file instead of opening it in the browser. */}
+            <motion.a
+              href="/SIH2026-IDEA-Presentation-Format.pptx"
+              download="SIH2026-IDEA-Presentation-Format.pptx"
+              title="Download Idea PPT Format"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative h-14 w-14 rounded-full flex-shrink-0 bg-white border-2 border-orange-200 shadow-sm flex flex-col items-center justify-center text-orange-500"
+            >
+              <span className="absolute inset-0 rounded-full bg-orange-300 opacity-60 animate-ping" />
+              <svg className="relative w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" />
+              </svg>
+              <span className="relative text-[7px] font-black uppercase tracking-tight leading-none mt-0.5 text-blue-900">
+                Idea PPT
+              </span>
+            </motion.a>
           </div>
 
           {/* Right: Desktop Menu — pinned to the right edge of the navbar */}
@@ -279,6 +300,19 @@ const SIHFluidWebsiteInner = () => {
   const [siteAnnouncement, setSiteAnnouncement] = useState('');
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState('');
+  const [showIdeaPPTModal, setShowIdeaPPTModal] = useState(false);
+
+  // Show the Idea PPT download modal the moment the site is opened — once per
+  // browser session (sessionStorage), so it grabs attention on first load but
+  // doesn't pop up again every time the user just clicks between nav tabs.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const alreadySeen = sessionStorage.getItem('sih_idea_ppt_modal_seen');
+    if (!alreadySeen) {
+      setShowIdeaPPTModal(true);
+      sessionStorage.setItem('sih_idea_ppt_modal_seen', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'config'), (snap) => {
@@ -382,6 +416,71 @@ const SIHFluidWebsiteInner = () => {
     >
       {/* Navigation */}
       <SIHFluidNavigation page={page} setPage={setPage} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+
+      {/* Idea PPT download modal — the very first thing a visitor sees. Sits
+          above the navbar (z-[60]) so it's genuinely the first thing to
+          catch the eye, not a small badge someone has to notice on their own. */}
+      <AnimatePresence>
+        {showIdeaPPTModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+            onClick={() => setShowIdeaPPTModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 10 }}
+              className="relative bg-white border-2 border-orange-200 p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <motion.button
+                onClick={() => setShowIdeaPPTModal(false)}
+                aria-label="Close"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-slate-500 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </motion.button>
+
+              <motion.div
+                className="relative w-16 h-16 mx-auto rounded-full bg-orange-50 border-2 border-orange-300 flex items-center justify-center mb-5"
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <svg className="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" />
+                </svg>
+              </motion.div>
+
+              <h3 className="text-xl font-black text-blue-900 mb-2">Idea PPT Format</h3>
+              <p className="text-sm text-slate-500 mb-6">
+                Download the official Smart India Hackathon 2026 idea presentation format before you get started.
+              </p>
+
+              <a
+                href="/SIH2026-IDEA-Presentation-Format.pptx"
+                download="SIH2026-IDEA-Presentation-Format.pptx"
+                onClick={() => setShowIdeaPPTModal(false)}
+                className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-2xl transition-colors"
+              >
+                Download PPT Format
+              </a>
+              <button
+                onClick={() => setShowIdeaPPTModal(false)}
+                className="mt-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+              >
+                Maybe later
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Announcement — only shows on the Home page, styled like a live SIH notification.
           pt-20 clears the fixed navbar (h-20); the banner itself is in normal
