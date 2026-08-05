@@ -11,6 +11,7 @@ import FindTeammatesPage from '../FindTeammatesPage.jsx';
 import MyRequestsPage from '../MyRequestsPage.jsx';
 import ProfilePage from './ProfilePage.jsx';
 import AdminPage from '../AdminPage.jsx';
+import AarambhPage from '../AarambhPage.jsx';
 import { collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
@@ -81,6 +82,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
     { label: 'FIND TEAMMATES', pageKey: 'find-teammates', action: () => setPage('find-teammates') },
     { label: 'MY REQUESTS', pageKey: 'my-requests', action: () => setPage('my-requests') },
     { label: 'RESULTS', pageKey: 'results', action: () => setPage('results') },
+    { label: 'AARAMBH', pageKey: 'aarambh', action: () => setPage('aarambh') },
     { label: 'TEAMS', pageKey: 'registered', action: () => setPage('registered') },
     {
       label: 'PROFILE',
@@ -275,7 +277,7 @@ const SIHAnnouncementBanner = ({ message, onClose }) => {
 };
 
 // Inner component: everything that needs useAuth() must be inside AuthProvider
-const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'individual-register'];// Pages that let a user *start* a fresh registration — once registered, these are off-limits;
+const PROTECTED_PAGES = ['profile', 'registration-choice', 'team-register', 'individual-register', 'aarambh'];// Pages that let a user *start* a fresh registration — once registered, these are off-limits;
 // editing an existing registration should happen from the profile page instead.
 const REGISTRATION_ENTRY_PAGES = ['registration-choice', 'team-register', 'individual-register'];
 const REGISTERED_ONLY_PAGES = ['find-teammates', 'my-requests'];
@@ -507,6 +509,8 @@ const SIHFluidWebsiteInner = () => {
           <SIHRegisteredPage teams={teams} individuals={individuals} isLoading={isLoading} />
         ) : page === 'results' ? (
           <ResultsPage />
+        ) : page === 'aarambh' ? (
+          <AarambhPage setPage={setPage} showToast={showToast} showAlert={showAlert} />
         ) : page === 'team-register' ? (
           <TeamRegistration setPage={setPage} setTeams={setTeams} showToast={showToast} showAlert={showAlert} />
         ) : page === 'individual-register' ? (

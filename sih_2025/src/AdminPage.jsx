@@ -26,12 +26,49 @@ const downloadCSV = (filename, rows) => {
     URL.revokeObjectURL(url);
 };
 
+// Opens a base64 data URL (e.g. a PDF) in a new browser tab
+const openFileInNewTab = (dataUrl) => {
+    try {
+        if (!dataUrl) {
+            alert('No file data available.');
+            return;
+        }
+        const [header, base64] = dataUrl.split(',');
+        const mimeMatch = header.match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+        const bstr = atob(base64);
+        const u8arr = new Uint8Array(bstr.length);
+        for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+        const blob = new Blob([u8arr], { type: mime });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+    } catch (err) {
+        console.error('Failed to open file:', err);
+        alert('Failed to open file.');
+    }
+};
+
+// Downloads a base64 data URL as a file with the given filename
+const downloadFile = (dataUrl, filename) => {
+    if (!dataUrl) {
+        alert('No file data available.');
+        return;
+    }
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.setAttribute('download', filename || 'submission.pdf');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 export default function AdminPage({ setPage }) {
     const { user, isAdmin, loading: authLoading } = useAuth();
     const [tab, setTab] = useState('teams');
     const [teams, setTeams] = useState([]);
     const [users, setUsers] = useState([]);
     const [requests, setRequests] = useState([]);
+    const [submissions, setSubmissions] = useState([]);
     const [settings, setSettings] = useState({ registrationOpen: true, announcement: '' });
     const [announcementDraft, setAnnouncementDraft] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
@@ -66,11 +103,16 @@ export default function AdminPage({ setPage }) {
             }
         });
 
+        const unsubSubmissions = onSnapshot(collection(db, 'aarambhSubmissions'), (snap) => {
+            setSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+
         return () => {
             unsubTeams();
             unsubUsers();
             unsubRequests();
             unsubSettings();
+            unsubSubmissions();
         };
     }, [authLoading, isAdmin]);
 
@@ -195,6 +237,27 @@ export default function AdminPage({ setPage }) {
         (t.leader?.name || '').toLowerCase().includes(search.toLowerCase())
     );
 
+    const filteredSubmissions = submissions.filter(s =>
+        (s.teamName || '').toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Cross-references a submission with its team/user record to get leader contact info
+    const getSubmissionContact = (sub) => {
+        const team = teams.find(t => t.id === sub.teamId);
+        const submitterUser = users.find(u => u.id === sub.submittedBy);
+        return {
+            leaderName: team?.leader?.name || submitterUser?.name || '—',
+            phone: team?.leader?.contactNumber || submitterUser?.contactNumber || '—',
+            email: submitterUser?.email || team?.leader?.email || '—',
+        };
+    };
+
+    const formatSubmittedAt = (ts) => {
+        if (!ts) return '—';
+        if (ts.toDate) return ts.toDate().toLocaleString();
+        return String(ts);
+    };
+
     const standaloneIndividuals = users.filter(u => u.registered && u.role === 'individual' && !u.teamId);
     const registeredCount = users.filter(u => u.registered).length;
     const pendingRequests = requests.filter(r => r.status === 'pending').length;
@@ -253,13 +316,39 @@ export default function AdminPage({ setPage }) {
         downloadCSV('users.csv', rows);
     };
 
+    const exportSubmissionsCSV = () => {
+        const rows = [
+            ['Team Name', 'Track', 'Leader Name', 'Leader Phone', 'Leader Email', 'File Name', 'Submitted At'],
+            ...submissions.map(s => {
+                const { leaderName, phone, email } = getSubmissionContact(s);
+                return [
+                    s.teamName || '',
+                    s.track || '',
+                    leaderName,
+                    phone,
+                    email,
+                    s.pptFileName || '',
+                    formatSubmittedAt(s.submittedAt),
+                ];
+            }),
+        ];
+        downloadCSV('submissions.csv', rows);
+    };
+
     const TABS = [
         { key: 'teams', label: 'Teams', count: teams.length },
         { key: 'users', label: 'All Users', count: users.length },
         { key: 'individuals', label: 'Unassigned', count: standaloneIndividuals.length },
         { key: 'requests', label: 'Requests', count: requests.length },
+        { key: 'submissions', label: 'Submissions', count: submissions.length },
         { key: 'settings', label: 'Settings', count: null },
     ];
+
+    const exportHandlers = {
+        teams: exportTeamsCSV,
+        users: exportUsersCSV,
+        submissions: exportSubmissionsCSV,
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 px-4 py-10">
@@ -350,7 +439,7 @@ export default function AdminPage({ setPage }) {
                     ))}
                 </div>
 
-                {(tab === 'teams' || tab === 'users') && (
+                {(tab === 'teams' || tab === 'users' || tab === 'submissions') && (
                     <div className="flex flex-col sm:flex-row gap-3 mb-6 items-start sm:items-center">
                         <div className="relative max-w-md w-full">
                             <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -366,13 +455,13 @@ export default function AdminPage({ setPage }) {
                         </div>
 
                         <button
-                            onClick={tab === 'teams' ? exportTeamsCSV : exportUsersCSV}
+                            onClick={exportHandlers[tab]}
                             className="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors flex-shrink-0"
                         >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Export {tab === 'teams' ? 'Teams' : 'Users'} CSV
+                            Export {tab === 'teams' ? 'Teams' : tab === 'users' ? 'Users' : 'Submissions'} CSV
                         </button>
                     </div>
                 )}
@@ -595,6 +684,62 @@ export default function AdminPage({ setPage }) {
                                                         <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize border ${statusStyles[r.status] || statusStyles.pending}`}>
                                                             {r.status}
                                                         </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* ===== SUBMISSIONS TAB ===== */}
+                    {tab === 'submissions' && (
+                        <motion.div key="submissions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-blue-900 text-white">
+                                        <tr>
+                                            <th className="text-left p-3.5 font-semibold">Team Name</th>
+                                            <th className="text-left p-3.5 font-semibold">Track</th>
+                                            <th className="text-left p-3.5 font-semibold">Leader</th>
+                                            <th className="text-left p-3.5 font-semibold">Phone</th>
+                                            <th className="text-left p-3.5 font-semibold">Email</th>
+                                            <th className="text-left p-3.5 font-semibold">File</th>
+                                            <th className="text-left p-3.5 font-semibold">Submitted At</th>
+                                            <th className="text-left p-3.5 font-semibold">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredSubmissions.length === 0 ? (
+                                            <tr><td colSpan={8} className="text-center text-slate-400 py-10">No submissions found.</td></tr>
+                                        ) : filteredSubmissions.map((s, i) => {
+                                            const { leaderName, phone, email } = getSubmissionContact(s);
+                                            return (
+                                                <tr key={s.id} className={`border-b border-gray-100 hover:bg-orange-50/40 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                                    <td className="p-3.5 font-semibold text-blue-900">{s.teamName || '—'}</td>
+                                                    <td className="p-3.5 text-slate-600">{s.track || '—'}</td>
+                                                    <td className="p-3.5 text-slate-600">{leaderName}</td>
+                                                    <td className="p-3.5 text-slate-600">{phone}</td>
+                                                    <td className="p-3.5 text-slate-600">{email}</td>
+                                                    <td className="p-3.5 text-slate-600">{s.pptFileName || '—'}</td>
+                                                    <td className="p-3.5 text-slate-500 text-xs">{formatSubmittedAt(s.submittedAt)}</td>
+                                                    <td className="p-3.5">
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => openFileInNewTab(s.pptBase64)}
+                                                                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
+                                                            >
+                                                                Open
+                                                            </button>
+                                                            <button
+                                                                onClick={() => downloadFile(s.pptBase64, s.pptFileName)}
+                                                                className="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-500 hover:text-white transition-colors text-xs font-semibold"
+                                                            >
+                                                                Download
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
