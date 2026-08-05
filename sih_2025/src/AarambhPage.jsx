@@ -228,35 +228,17 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
         );
     }
 
-    // ===== Unassigned individual — block submission =====
-    if (role === 'unassigned') {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center max-w-md bg-white border border-gray-200 rounded-3xl shadow-sm p-10"
-                >
-                    <h1 className="text-3xl font-black text-blue-900 mb-3">Join a Team First</h1>
-                    <p className="text-slate-600 mb-6">
-                        You need to be part of a team to register for Aarambh. Create a team or join one from Find Teammates.
-                    </p>
-                    <button
-                        onClick={() => setPage && setPage('find-teammates')}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-2xl font-bold transition-colors"
-                    >
-                        Find Teammates →
-                    </button>
-                </motion.div>
-            </div>
-        );
-    }
-
+    // Only the team leader can actually pick a track and submit a PPT.
+    // Members (in a team, not leader) and unassigned individuals get a
+    // read-only view of the page — they can browse problem statements,
+    // but the Select / Submit UI is hidden for them.
     const isMember = role === 'member';
+    const isUnassigned = role === 'unassigned';
+    const canSubmit = role === 'leader';
 
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-10">
-            <div className="max-w-7xl mx-auto space-y-10">
+            <div className="max-w-[95rem] mx-auto space-y-10">
                 <div className="text-center">
                     <h1 className="text-4xl md:text-5xl font-black text-blue-900 mb-3">Register for Aarambh</h1>
                     <p className="text-slate-600 text-lg">Select your track and submit your PPT.Use official PPT Templeate(IDEA PPT) of SIH 2026 Download it from Nav Bar </p>
@@ -271,39 +253,63 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     </div>
                 )}
 
+                {isUnassigned && (
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium rounded-2xl p-4 text-center flex flex-col md:flex-row items-center justify-center gap-3">
+                        <span>You're not part of a team yet. Browse the problem statements below — to submit an idea, you'll first need to join or create a team.</span>
+                        <button
+                            onClick={() => setPage && setPage('find-teammates')}
+                            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl font-bold transition-colors whitespace-nowrap"
+                        >
+                            Find Teammates →
+                        </button>
+                    </div>
+                )}
+
                 {/* Problem Statement Table */}
                 <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
+                        <table className="w-full text-sm text-left table-fixed min-w-[1400px]">
+                            <colgroup>
+                                <col className="w-16" />
+                                <col className="w-40" />
+                                <col className="w-[34%]" />
+                                <col className="w-64" />
+                                <col className="w-28" />
+                                <col className="w-20" />
+                                <col className="w-40" />
+                                <col className="w-28" />
+                                <col className="w-28" />
+                                {canSubmit && <col className="w-28" />}
+                            </colgroup>
                             <thead className="bg-blue-900 text-white uppercase text-xs tracking-wide">
                                 <tr>
-                                    <th className="px-3 py-3 whitespace-nowrap">S.No.</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Organization</th>
-                                    <th className="px-3 py-3">Problem Statement Title</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Category</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">PS Number</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Ideas</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Theme</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Deadline</th>
-                                    <th className="px-3 py-3 whitespace-nowrap">Details</th>
-                                    {!isMember && <th className="px-3 py-3 whitespace-nowrap">Select</th>}
+                                    <th className="px-4 py-3 whitespace-nowrap">S.No.</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Organization</th>
+                                    <th className="px-4 py-3">Problem Statement Title</th>
+                                    <th className="px-4 py-3">Category</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">PS Number</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Ideas</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Theme</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Deadline</th>
+                                    <th className="px-4 py-3 whitespace-nowrap">Details</th>
+                                    {canSubmit && <th className="px-4 py-3 whitespace-nowrap">Select</th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {PROBLEM_STATEMENTS.map((ps, i) => (
                                     <tr
                                         key={ps.psNumber}
-                                        className={`border-t border-gray-100 ${selectedTrack === ps.psNumber ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+                                        className={`border-t border-gray-100 align-top ${selectedTrack === ps.psNumber ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
                                     >
-                                        <td className="px-3 py-3 text-slate-600">{i + 1}</td>
-                                        <td className="px-3 py-3 text-slate-700 whitespace-nowrap">{ps.organization}</td>
-                                        <td className="px-3 py-3 font-semibold text-blue-900">{ps.title}</td>
-                                        <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{ps.category}</td>
-                                        <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{ps.psNumber}</td>
-                                        <td className="px-3 py-3 text-slate-600 text-center">{counts[ps.psNumber] || 0}</td>
-                                        <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{ps.theme}</td>
-                                        <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{ps.deadline}</td>
-                                        <td className="px-3 py-3">
+                                        <td className="px-4 py-4 text-slate-600">{i + 1}</td>
+                                        <td className="px-4 py-4 text-slate-700">{ps.organization}</td>
+                                        <td className="px-4 py-4 font-semibold text-blue-900 leading-snug whitespace-normal break-words">{ps.title}</td>
+                                        <td className="px-4 py-4 text-slate-600 leading-snug whitespace-normal break-words">{ps.category}</td>
+                                        <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{ps.psNumber}</td>
+                                        <td className="px-4 py-4 text-slate-600 text-center">{counts[ps.psNumber] || 0}</td>
+                                        <td className="px-4 py-4 text-slate-600 whitespace-normal break-words">{ps.theme}</td>
+                                        <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{ps.deadline}</td>
+                                        <td className="px-4 py-4">
                                             <button
                                                 onClick={() => setViewPS(ps)}
                                                 className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors whitespace-nowrap"
@@ -311,8 +317,8 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                                                 View Full
                                             </button>
                                         </td>
-                                        {!isMember && (
-                                            <td className="px-3 py-3">
+                                        {canSubmit && (
+                                            <td className="px-4 py-4">
                                                 <button
                                                     onClick={() => setSelectedTrack(ps.psNumber)}
                                                     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors whitespace-nowrap ${selectedTrack === ps.psNumber
@@ -331,8 +337,8 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     </div>
                 </div>
 
-                {/* Submission Card */}
-                {!isMember && (
+                {/* Submission Card — leader only */}
+                {canSubmit && (
                     <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 md:p-8 space-y-6">
                         <h2 className="text-xl font-bold text-blue-900">Submit Your Solution</h2>
 
@@ -377,17 +383,24 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     </div>
                 )}
 
-                {/* Read-only status for members */}
-                {isMember && (
+                {/* Read-only status for members and unassigned individuals */}
+                {!canSubmit && (
                     <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 md:p-8">
                         <h2 className="text-xl font-bold text-blue-900 mb-4">Submission Status</h2>
-                        {mySubmission ? (
-                            <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-2xl p-4">
-                                ✅ Submitted for track <strong>{mySubmission.track}</strong>
-                                {mySubmission.pptFileName && <> — file: <strong>{mySubmission.pptFileName}</strong></>}
-                            </div>
-                        ) : (
-                            <p className="text-slate-500">Your team hasn't submitted yet.</p>
+                        {isMember && (
+                            mySubmission ? (
+                                <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-2xl p-4">
+                                    ✅ Submitted for track <strong>{mySubmission.track}</strong>
+                                    {mySubmission.pptFileName && <> — file: <strong>{mySubmission.pptFileName}</strong></>}
+                                </div>
+                            ) : (
+                                <p className="text-slate-500">Your team hasn't submitted yet.</p>
+                            )
+                        )}
+                        {isUnassigned && (
+                            <p className="text-slate-500">
+                                Join or create a team to submit an idea. Once you're in a team, your leader can select a track and upload your PPT.
+                            </p>
                         )}
                     </div>
                 )}
@@ -440,7 +453,7 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                                 </p>
                             )}
 
-                            {!isMember && (
+                            {canSubmit && (
                                 <button
                                     onClick={() => { setSelectedTrack(viewPS.psNumber); setViewPS(null); }}
                                     className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-2xl font-bold transition-colors"
