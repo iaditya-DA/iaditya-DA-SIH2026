@@ -21,7 +21,7 @@ const PROBLEM_STATEMENTS = [
         psNumber: 'AA001',
         title: 'AI-Powered Smart Flood Response & Rescue System for Assam',
         organization: 'LNCT University',
-        category: 'Software (AI/ML | IoT | GIS | Mobile Application)',
+        category: 'Software (AI/ML | IoT | GIS | Mobile/web Application)',
         theme: 'Disaster Management',
         deadline: 'TBD',
         fullDescription: `Every year, floods in Assam displace thousands of people, damage infrastructure, disrupt communication, and delay rescue operations. Despite the availability of weather forecasts and disaster alerts, there is no unified platform that integrates flood prediction, citizen SOS reporting, rescue coordination, and relief management in real time.
@@ -32,7 +32,7 @@ Design and develop a technology solution that enables government agencies, disas
         psNumber: 'AA002',
         title: 'Smart Digital Experience for Shri Mahakaleshwar Temple',
         organization: 'LNCT University',
-        category: 'Software (AI/ML | GIS | Mobile Application | AR/VR)',
+        category: 'Software (AI/ML | GIS | Mobile/web Application | AR/VR)',
         theme: 'Heritage & Culture',
         deadline: 'TBD',
         fullDescription: `Shri Mahakaleshwar Temple in Ujjain attracts millions of devotees and tourists every year, leading to challenges such as overcrowding, long waiting times, limited access to authentic historical information, and difficulty in navigating temple premises and nearby heritage sites. Existing digital services provide limited assistance in enhancing the overall visitor experience.
