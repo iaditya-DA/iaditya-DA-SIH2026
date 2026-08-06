@@ -128,8 +128,8 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
                 button. Soft ping ring draws the eye; `download` on the <a>
                 saves the file instead of opening it in the browser. */}
             <motion.a
-              href="/SIH2026-IDEA-Presentation-Format.pptx"
-              download="SIH2026-IDEA-Presentation-Format.pptx"
+              href="/idea.pdf"
+              download="Idea.pdf"
               title="Download Idea PPT Format"
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
@@ -466,8 +466,8 @@ const SIHFluidWebsiteInner = () => {
               </p>
 
               <a
-                href="/SIH2026-IDEA-Presentation-Format.pptx"
-                download="SIH2026-IDEA-Presentation-Format.pptx"
+                href="/idea.pdf"
+                download="idea.pdf"
                 onClick={() => setShowIdeaPPTModal(false)}
                 className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-2xl transition-colors"
               >
