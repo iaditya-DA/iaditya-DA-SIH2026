@@ -23,7 +23,7 @@ const PROBLEM_STATEMENTS = [
         organization: 'LNCT University',
         category: 'Software (AI/ML | IoT | GIS | Mobile/web Application)',
         theme: 'Disaster Management',
-        deadline: 'TBD',
+        deadline: '2026-08-12',
         fullDescription: `Every year, floods in Assam displace thousands of people, damage infrastructure, disrupt communication, and delay rescue operations. Despite the availability of weather forecasts and disaster alerts, there is no unified platform that integrates flood prediction, citizen SOS reporting, rescue coordination, and relief management in real time.
 
 Design and develop a technology solution that enables government agencies, disaster response teams, NGOs, and citizens to efficiently manage flood emergencies. The solution should support real-time flood monitoring, AI-based risk prediction, emergency reporting, rescue coordination, relief camp information, and transparent distribution of essential supplies while remaining functional in low-connectivity areas.`
@@ -34,7 +34,7 @@ Design and develop a technology solution that enables government agencies, disas
         organization: 'LNCT University',
         category: 'Software (AI/ML | GIS | Mobile/web Application | AR/VR)',
         theme: 'Heritage & Culture',
-        deadline: 'TBD',
+        deadline: '2026-08-12',
         fullDescription: `Shri Mahakaleshwar Temple in Ujjain attracts millions of devotees and tourists every year, leading to challenges such as overcrowding, long waiting times, limited access to authentic historical information, and difficulty in navigating temple premises and nearby heritage sites. Existing digital services provide limited assistance in enhancing the overall visitor experience.
 
 Design and develop a smart technology solution that improves the pilgrimage experience through AI-powered crowd management, real-time queue updates, digital navigation, multilingual virtual guides, and interactive heritage information. The platform should help devotees plan their visit efficiently, reduce congestion, promote the historical and cultural significance of the temple, and support authorities in managing visitor flow during festivals and peak seasons.`
@@ -45,7 +45,7 @@ Design and develop a smart technology solution that improves the pilgrimage expe
         organization: 'LNCT University',
         category: 'Software (AI/ML | Mobile Application | GIS)',
         theme: 'Education',
-        deadline: 'TBD',
+        deadline: '2026-08-12',
         fullDescription: `New students often face difficulty locating classrooms, laboratories, faculty offices, hostels, libraries, and administrative departments within the campus. They also struggle to access important services such as timetables, transport information, event updates, and grievance support from a single platform.
 
 Design and develop a smart campus assistant that helps students navigate the campus and access essential college services through a unified mobile or web application. The solution should improve the overall campus experience by providing seamless navigation, real-time information, and easy access to student resources.`
@@ -56,7 +56,7 @@ Design and develop a smart campus assistant that helps students navigate the cam
         organization: 'LNCT University',
         category: 'Software/Hardware',
         theme: 'Open Innovation',
-        deadline: 'TBD',
+        deadline: '2026-08-12',
         fullDescription: `Open Innovation Track is designed for participants who want to solve real-world problems beyond predefined problem statements. Students, researchers, startups, and innovators can identify any challenge that creates meaningful social, industrial, environmental, healthcare, educational, or technological impact and propose their own innovative solution. Participants are free to choose any domain and develop a software, hardware, or hybrid prototype. Evaluation will focus on originality, innovation, feasibility, technical implementation, scalability, and potential impact.`
     },
 ];

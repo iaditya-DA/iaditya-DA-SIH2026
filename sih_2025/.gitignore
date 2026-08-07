@@ -48,8 +48,7 @@ serviceAccountKey.json
 
 # Personal Data & Documents - DO NOT COMMIT
 # PDF files (results, documents, reports)
-*.pdf
-*.PDF
+
 
 # Personal/sensitive data files
 *.xlsx
