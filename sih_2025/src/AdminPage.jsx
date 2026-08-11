@@ -237,15 +237,28 @@ export default function AdminPage({ setPage }) {
         (t.leader?.name || '').toLowerCase().includes(search.toLowerCase())
     );
 
-    const filteredSubmissions = submissions.filter(s =>
-        (s.teamName || '').toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredSubmissions = submissions.filter(s => {
+        const label = s.isIndividual ? (s.individualName || '') : (s.teamName || '');
+        return label.toLowerCase().includes(search.toLowerCase());
+    });
 
-    // Cross-references a submission with its team/user record to get leader contact info
+    // Cross-references a submission with its team/user record to get contact info.
+    // Handles both team submissions (keyed by teamId) and solo individual
+    // submissions (isIndividual: true, keyed by the submitter's uid).
     const getSubmissionContact = (sub) => {
+        if (sub.isIndividual) {
+            const submitterUser = users.find(u => u.id === (sub.submittedBy || sub.individualUid));
+            return {
+                displayName: sub.individualName || submitterUser?.name || '—',
+                leaderName: submitterUser?.name || sub.individualName || '—',
+                phone: submitterUser?.contactNumber || '—',
+                email: submitterUser?.email || sub.individualName || '—',
+            };
+        }
         const team = teams.find(t => t.id === sub.teamId);
         const submitterUser = users.find(u => u.id === sub.submittedBy);
         return {
+            displayName: sub.teamName || team?.teamName || '—',
             leaderName: team?.leader?.name || submitterUser?.name || '—',
             phone: team?.leader?.contactNumber || submitterUser?.contactNumber || '—',
             email: submitterUser?.email || team?.leader?.email || '—',
@@ -264,6 +277,7 @@ export default function AdminPage({ setPage }) {
 
     const fullTeams = teams.filter(t => 1 + (t.members?.length || 0) >= 6).length;
     const teamsNeedingMembers = teams.length - fullTeams;
+    const individualSubmissionsCount = submissions.filter(s => s.isIndividual).length;
 
     const statusStyles = {
         accepted: 'bg-green-50 text-green-700 border-green-200',
@@ -318,11 +332,12 @@ export default function AdminPage({ setPage }) {
 
     const exportSubmissionsCSV = () => {
         const rows = [
-            ['Team Name', 'Track', 'Leader Name', 'Leader Phone', 'Leader Email', 'File Name', 'Submitted At'],
+            ['Type', 'Team / Individual Name', 'Track', 'Contact Name', 'Phone', 'Email', 'File Name', 'Submitted At'],
             ...submissions.map(s => {
-                const { leaderName, phone, email } = getSubmissionContact(s);
+                const { displayName, leaderName, phone, email } = getSubmissionContact(s);
                 return [
-                    s.teamName || '',
+                    s.isIndividual ? 'Individual' : 'Team',
+                    displayName,
                     s.track || '',
                     leaderName,
                     phone,
@@ -696,56 +711,72 @@ export default function AdminPage({ setPage }) {
 
                     {/* ===== SUBMISSIONS TAB ===== */}
                     {tab === 'submissions' && (
-                        <motion.div key="submissions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-blue-900 text-white">
-                                        <tr>
-                                            <th className="text-left p-3.5 font-semibold">Team Name</th>
-                                            <th className="text-left p-3.5 font-semibold">Track</th>
-                                            <th className="text-left p-3.5 font-semibold">Leader</th>
-                                            <th className="text-left p-3.5 font-semibold">Phone</th>
-                                            <th className="text-left p-3.5 font-semibold">Email</th>
-                                            <th className="text-left p-3.5 font-semibold">File</th>
-                                            <th className="text-left p-3.5 font-semibold">Submitted At</th>
-                                            <th className="text-left p-3.5 font-semibold">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredSubmissions.length === 0 ? (
-                                            <tr><td colSpan={8} className="text-center text-slate-400 py-10">No submissions found.</td></tr>
-                                        ) : filteredSubmissions.map((s, i) => {
-                                            const { leaderName, phone, email } = getSubmissionContact(s);
-                                            return (
-                                                <tr key={s.id} className={`border-b border-gray-100 hover:bg-orange-50/40 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                                    <td className="p-3.5 font-semibold text-blue-900">{s.teamName || '—'}</td>
-                                                    <td className="p-3.5 text-slate-600">{s.track || '—'}</td>
-                                                    <td className="p-3.5 text-slate-600">{leaderName}</td>
-                                                    <td className="p-3.5 text-slate-600">{phone}</td>
-                                                    <td className="p-3.5 text-slate-600">{email}</td>
-                                                    <td className="p-3.5 text-slate-600">{s.pptFileName || '—'}</td>
-                                                    <td className="p-3.5 text-slate-500 text-xs">{formatSubmittedAt(s.submittedAt)}</td>
-                                                    <td className="p-3.5">
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => openFileInNewTab(s.pptBase64)}
-                                                                className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
-                                                            >
-                                                                Open
-                                                            </button>
-                                                            <button
-                                                                onClick={() => downloadFile(s.pptBase64, s.pptFileName)}
-                                                                className="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-500 hover:text-white transition-colors text-xs font-semibold"
-                                                            >
-                                                                Download
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                        <motion.div key="submissions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                                <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                    {submissions.length - individualSubmissionsCount} Team Submissions
+                                </span>
+                                <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    {individualSubmissionsCount} Individual Submissions
+                                </span>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-blue-900 text-white">
+                                            <tr>
+                                                <th className="text-left p-3.5 font-semibold">Type</th>
+                                                <th className="text-left p-3.5 font-semibold">Team / Individual</th>
+                                                <th className="text-left p-3.5 font-semibold">Track</th>
+                                                <th className="text-left p-3.5 font-semibold">Contact Name</th>
+                                                <th className="text-left p-3.5 font-semibold">Phone</th>
+                                                <th className="text-left p-3.5 font-semibold">Email</th>
+                                                <th className="text-left p-3.5 font-semibold">File</th>
+                                                <th className="text-left p-3.5 font-semibold">Submitted At</th>
+                                                <th className="text-left p-3.5 font-semibold">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredSubmissions.length === 0 ? (
+                                                <tr><td colSpan={9} className="text-center text-slate-400 py-10">No submissions found.</td></tr>
+                                            ) : filteredSubmissions.map((s, i) => {
+                                                const { displayName, leaderName, phone, email } = getSubmissionContact(s);
+                                                return (
+                                                    <tr key={s.id} className={`border-b border-gray-100 hover:bg-orange-50/40 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                                        <td className="p-3.5">
+                                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${s.isIndividual ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                {s.isIndividual ? 'Individual' : 'Team'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3.5 font-semibold text-blue-900">{displayName}</td>
+                                                        <td className="p-3.5 text-slate-600">{s.track || '—'}</td>
+                                                        <td className="p-3.5 text-slate-600">{leaderName}</td>
+                                                        <td className="p-3.5 text-slate-600">{phone}</td>
+                                                        <td className="p-3.5 text-slate-600">{email}</td>
+                                                        <td className="p-3.5 text-slate-600">{s.pptFileName || '—'}</td>
+                                                        <td className="p-3.5 text-slate-500 text-xs">{formatSubmittedAt(s.submittedAt)}</td>
+                                                        <td className="p-3.5">
+                                                            <div className="flex gap-2">
+                                                                <button
+                                                                    onClick={() => openFileInNewTab(s.pptBase64)}
+                                                                    className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-500 hover:text-white transition-colors text-xs font-semibold"
+                                                                >
+                                                                    Open
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => downloadFile(s.pptBase64, s.pptFileName)}
+                                                                    className="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-200 hover:bg-green-500 hover:text-white transition-colors text-xs font-semibold"
+                                                                >
+                                                                    Download
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </motion.div>
                     )}

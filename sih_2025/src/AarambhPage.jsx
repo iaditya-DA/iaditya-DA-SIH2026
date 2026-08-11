@@ -115,6 +115,7 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     const profile = profileSnap.exists() ? profileSnap.data() : null;
                     if (profile?.teamId) {
                         setRole('member');
+                        setMyTeam(null);
                         // Read-only: still fetch team + submission for display
                         onSnapshot(doc(db, 'teams', profile.teamId), (teamSnap) => {
                             if (teamSnap.exists()) setMyTeam({ id: teamSnap.id, ...teamSnap.data() });
@@ -125,6 +126,18 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                         });
                     } else {
                         setRole('unassigned');
+                        setMyTeam(null);
+                        // Individuals (no team yet) can still submit solo, keyed by their own uid
+                        if (unsubSubmission) unsubSubmission();
+                        unsubSubmission = onSnapshot(doc(db, 'aarambhSubmissions', user.uid), (subSnap) => {
+                            if (subSnap.exists()) {
+                                const data = subSnap.data();
+                                setMySubmission(data);
+                                setSelectedTrack(data.track || null);
+                            } else {
+                                setMySubmission(null);
+                            }
+                        });
                     }
                     setLoading(false);
                 });
@@ -199,9 +212,19 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                 pptFileName = selectedFile.name;
             }
 
-            await setDoc(doc(db, 'aarambhSubmissions', myTeam.id), {
-                teamId: myTeam.id,
-                teamName: myTeam.teamName,
+            // Team leaders submit under their team's doc id; solo (unassigned)
+            // participants submit under their own uid so they don't need a team.
+            const docId = myTeam ? myTeam.id : user.uid;
+            const identityFields = myTeam
+                ? { teamId: myTeam.id, teamName: myTeam.teamName, isIndividual: false }
+                : {
+                    isIndividual: true,
+                    individualUid: user.uid,
+                    individualName: user.displayName || user.email || 'Individual Participant',
+                };
+
+            await setDoc(doc(db, 'aarambhSubmissions', docId), {
+                ...identityFields,
                 track: selectedTrack,
                 pptBase64,
                 pptFileName,
@@ -228,13 +251,12 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
         );
     }
 
-    // Only the team leader can actually pick a track and submit a PPT.
-    // Members (in a team, not leader) and unassigned individuals get a
-    // read-only view of the page — they can browse problem statements,
-    // but the Select / Submit UI is hidden for them.
+    // Team leaders and solo (unassigned) individuals can both select a track
+    // and submit a PPT. Only members who belong to a team but aren't the
+    // leader get a strictly read-only view.
     const isMember = role === 'member';
     const isUnassigned = role === 'unassigned';
-    const canSubmit = role === 'leader';
+    const canSubmit = role === 'leader' || role === 'unassigned';
 
     return (
         <div className="min-h-screen bg-slate-50 px-4 py-10">
@@ -244,6 +266,9 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     <p className="text-slate-600 text-lg">Select your track and submit your PPT.Use official PPT Templeate(IDEA PPT) of SIH 2026 Download it from Nav Bar </p>
                     {myTeam && (
                         <p className="text-sm text-orange-600 font-semibold mt-2">Team: {myTeam.teamName}</p>
+                    )}
+                    {isUnassigned && (
+                        <p className="text-sm text-orange-600 font-semibold mt-2">Submitting as an individual participant</p>
                     )}
                 </div>
 
@@ -255,7 +280,7 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
 
                 {isUnassigned && (
                     <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium rounded-2xl p-4 text-center flex flex-col md:flex-row items-center justify-center gap-3">
-                        <span>You're not part of a team yet. Browse the problem statements below — to submit an idea, you'll first need to join or create a team.</span>
+                        <span>You're not part of a team yet — you can select a track and submit solo below, or team up with others.</span>
                         <button
                             onClick={() => setPage && setPage('find-teammates')}
                             className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl font-bold transition-colors whitespace-nowrap"
@@ -337,7 +362,7 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     </div>
                 </div>
 
-                {/* Submission Card — leader only */}
+                {/* Submission Card — team leaders and solo individuals */}
                 {canSubmit && (
                     <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 md:p-8 space-y-6">
                         <h2 className="text-xl font-bold text-blue-900">Submit Your Solution</h2>
@@ -383,24 +408,17 @@ export default function AarambhPage({ setPage, showToast, showAlert }) {
                     </div>
                 )}
 
-                {/* Read-only status for members and unassigned individuals */}
-                {!canSubmit && (
+                {/* Read-only status for team members who aren't the leader */}
+                {!canSubmit && isMember && (
                     <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 md:p-8">
                         <h2 className="text-xl font-bold text-blue-900 mb-4">Submission Status</h2>
-                        {isMember && (
-                            mySubmission ? (
-                                <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-2xl p-4">
-                                    ✅ Submitted for track <strong>{mySubmission.track}</strong>
-                                    {mySubmission.pptFileName && <> — file: <strong>{mySubmission.pptFileName}</strong></>}
-                                </div>
-                            ) : (
-                                <p className="text-slate-500">Your team hasn't submitted yet.</p>
-                            )
-                        )}
-                        {isUnassigned && (
-                            <p className="text-slate-500">
-                                Join or create a team to submit an idea. Once you're in a team, your leader can select a track and upload your PPT.
-                            </p>
+                        {mySubmission ? (
+                            <div className="bg-green-50 border border-green-200 text-green-800 text-sm rounded-2xl p-4">
+                                ✅ Submitted for track <strong>{mySubmission.track}</strong>
+                                {mySubmission.pptFileName && <> — file: <strong>{mySubmission.pptFileName}</strong></>}
+                            </div>
+                        ) : (
+                            <p className="text-slate-500">Your team hasn't submitted yet.</p>
                         )}
                     </div>
                 )}
