@@ -15,34 +15,189 @@ import AarambhPage from '../AarambhPage.jsx';
 import { collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
+const RESULTS_DATA = [
+  { team: 'Bug Slayers', ps: 14, innovation: 18, solution: 19, feasibility: 13, impact: 14, market: 4, ppt: 5, qa: 5 },
+  { team: 'RED FLAGS', ps: 14, innovation: 17, solution: 18, feasibility: 14, impact: 13, market: 4, ppt: 4, qa: 4 },
+  { team: 'Neuronix', ps: 12, innovation: 17, solution: 17, feasibility: 13, impact: 14, market: 3, ppt: 5, qa: 3 },
+  { team: 'Datadynamos', ps: 14, innovation: 16, solution: 14, feasibility: 11, impact: 10, market: 4, ppt: 4, qa: 4 },
+  { team: 'Team Comet', ps: 10, innovation: 15, solution: 15, feasibility: 12, impact: 14, market: 2, ppt: 4, qa: 4 },
+  { team: 'SAARTHI', ps: 12, innovation: 12, solution: 12, feasibility: 12, impact: 10, market: 4, ppt: 5, qa: 3 },
+  { team: 'INNOVATORS', ps: 12, innovation: 10, solution: 10, feasibility: 14, impact: 10, market: 3, ppt: 4, qa: 4 },
+].map(t => ({
+  ...t,
+  total: t.ps + t.innovation + t.solution + t.feasibility + t.impact + t.market + t.ppt + t.qa
+})).sort((a, b) => b.total - a.total);
+
+// Teams jinke judging marks abhi tak nahi mile — separate list
+const PENDING_TEAMS = [
+  'Khushi Vyas',
+  'Code Blooded',
+  'ROADBLOCKS',
+  'QUANTUM HIVE',
+  'TROJONS',
+  'CODEHUNTERS',
+  'Vaibhav',
+];
+
+// label + max marks for every judging parameter — used in the full table
+const PARAMS = [
+  { key: 'ps', label: 'PS & Relevance', max: 15 },
+  { key: 'innovation', label: 'Innovation & Uniqueness', max: 20 },
+  { key: 'solution', label: 'Proposed Solution', max: 20 },
+  { key: 'feasibility', label: 'Feasibility & Tech Viability', max: 15 },
+  { key: 'impact', label: 'Impact & Scalability', max: 15 },
+  { key: 'market', label: 'Market/User Understanding', max: 5 },
+  { key: 'ppt', label: 'PPT & Presentation Quality', max: 5 },
+  { key: 'qa', label: 'Q&A / Defence', max: 5 },
+];
+
+const PODIUM_STYLES = [
+  { rank: 1, bg: 'from-yellow-400 to-yellow-500', ring: 'ring-yellow-400', badge: '🥇', height: 'md:mt-0', label: '1st Place' },
+  { rank: 2, bg: 'from-slate-300 to-slate-400', ring: 'ring-slate-300', badge: '🥈', height: 'md:mt-8', label: '2nd Place' },
+  { rank: 3, bg: 'from-orange-400 to-orange-500', ring: 'ring-orange-400', badge: '🥉', height: 'md:mt-14', label: '3rd Place' },
+];
+
 const ResultsPage = () => {
+  const top3 = RESULTS_DATA.slice(0, 3);
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+  const podiumMeta = [PODIUM_STYLES[1], PODIUM_STYLES[0], PODIUM_STYLES[2]];
+
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-20">
+    <div className="min-h-screen bg-white px-4 py-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="max-w-xl w-full text-center"
+        className="max-w-6xl mx-auto"
       >
-        <h1 className="text-5xl md:text-6xl font-black text-orange-500 tracking-wide mb-4">
-          RESULTS
-        </h1>
-
-        <div className="bg-orange-50 border-2 border-orange-400 rounded-2xl px-8 py-14">
-          <div className="w-24 h-24 mx-auto rounded-full border-4 border-orange-400 bg-white flex items-center justify-center mb-6">
-            <svg className="w-10 h-10 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-
-          <h2 className="text-2xl font-bold text-blue-900 mb-3 uppercase">
-            Results Coming Soon
-          </h2>
-
-          <p className="text-slate-600 text-lg">
-            Results for SIH 2026 will be announced here shortly. Stay tuned!
+        <div className="text-center mb-4">
+          <h1 className="text-5xl md:text-6xl font-black text-blue-900 tracking-wide mb-2">
+            RESULTS
+          </h1>
+          <p className="text-orange-500 font-bold uppercase tracking-widest text-sm">
+            AARAMBH RESULTS
           </p>
         </div>
+
+        {/* Credit line — judges */}
+        <p className="text-center text-slate-500 text-sm italic mb-12">
+          Marks assigned by Mr. Dipanshu Jha and DR Alka Gulati.
+        </p>
+
+        {/* Podium — Top 3, only name + total points */}
+        <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-6 md:gap-4 mb-16">
+          {podiumOrder.map((team, i) => {
+            const meta = podiumMeta[i];
+            if (!team) return null;
+            return (
+              <motion.div
+                key={team.team}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 * i }}
+                className={`relative w-full md:w-64 ${meta.height}`}
+              >
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-4xl drop-shadow-md">
+                  {meta.badge}
+                </div>
+                <div className={`bg-gradient-to-br ${meta.bg} rounded-3xl pt-10 pb-6 px-5 text-center shadow-xl ring-4 ${meta.ring} ring-offset-2`}>
+                  <p className="text-white/90 text-xs font-bold uppercase tracking-wider mb-1">
+                    {meta.label}
+                  </p>
+                  <h3 className="text-white text-xl font-black mb-3 truncate">
+                    {team.team}
+                  </h3>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-2xl py-3">
+                    <span className="text-white text-3xl font-black">{team.total}</span>
+                    <span className="text-white/80 text-sm font-semibold">/100</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Full leaderboard with every parameter as a column */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-blue-50 border-2 border-blue-100 rounded-3xl overflow-hidden"
+        >
+          <div className="bg-blue-900 px-6 py-4">
+            <h2 className="text-white font-bold uppercase tracking-wide text-sm">
+              Full Leaderboard — Parameter-wise Breakdown
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs md:text-sm min-w-[900px]">
+              <thead>
+                <tr className="text-blue-900 uppercase text-[10px] md:text-xs tracking-wide border-b border-blue-100">
+                  <th className="px-3 py-3 text-left sticky left-0 bg-blue-50">Rank</th>
+                  <th className="px-3 py-3 text-left sticky left-10 bg-blue-50">Team</th>
+                  {PARAMS.map(p => (
+                    <th key={p.key} className="px-3 py-3 text-center">
+                      {p.label}
+                      <div className="text-orange-500 font-black">/{p.max}</div>
+                    </th>
+                  ))}
+                  <th className="px-3 py-3 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {RESULTS_DATA.map((team, idx) => (
+                  <tr
+                    key={team.team}
+                    className={`border-b border-blue-100 last:border-0 ${idx < 3 ? 'bg-orange-50/50 font-semibold' : idx % 2 ? 'bg-white' : 'bg-blue-50/40'
+                      }`}
+                  >
+                    <td className="px-3 py-3 text-blue-900 sticky left-0 bg-inherit">#{idx + 1}</td>
+                    <td className="px-3 py-3 text-slate-700 sticky left-10 bg-inherit whitespace-nowrap">
+                      {team.team}
+                    </td>
+                    {PARAMS.map(p => (
+                      <td key={p.key} className="px-3 py-3 text-center text-slate-600">
+                        {team[p.key]}
+                      </td>
+                    ))}
+                    <td className="px-3 py-3 text-right text-orange-500 font-bold">
+                      {team.total}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+
+        {/* Pending — teams jinki judging abhi baaki hai */}
+        {PENDING_TEAMS.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="bg-slate-50 border-2 border-slate-200 rounded-3xl overflow-hidden mt-6"
+          >
+            <div className="bg-slate-700 px-6 py-4">
+              <h2 className="text-white font-bold uppercase tracking-wide text-sm">
+                Yet to be Judged
+              </h2>
+            </div>
+            <div className="divide-y divide-slate-200">
+              {PENDING_TEAMS.map((team) => (
+                <div
+                  key={team}
+                  className="flex items-center justify-between px-6 py-3"
+                >
+                  <span className="text-slate-600 font-medium">{team}</span>
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-400 bg-slate-200 px-3 py-1 rounded-full">
+                    Pending
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
