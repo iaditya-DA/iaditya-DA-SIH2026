@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, onSnapshot, doc, deleteDoc, setDoc, getDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, setDoc, updateDoc, getDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { getAuth, signOut } from 'firebase/auth';
 import { db } from './firebaseClient.js';
 import { useAuth } from './AuthContext.jsx';
@@ -69,14 +69,22 @@ export default function AdminPage({ setPage }) {
     const [users, setUsers] = useState([]);
     const [requests, setRequests] = useState([]);
     const [submissions, setSubmissions] = useState([]);
-    const [settings, setSettings] = useState({ registrationOpen: true, announcement: '' });
+    const [settings, setSettings] = useState({ registrationOpen: true, announcement: '', votingOpen: false, votingEndsAt: null });
     const [announcementDraft, setAnnouncementDraft] = useState('');
     const [savingSettings, setSavingSettings] = useState(false);
+    const [resettingVotes, setResettingVotes] = useState(false);
+    const [startingTimer, setStartingTimer] = useState(false);
+    const [votingSecondsLeft, setVotingSecondsLeft] = useState(null);
     const [loading, setLoading] = useState(true);
     const [expandedTeam, setExpandedTeam] = useState(null);
     const [search, setSearch] = useState('');
     const [deletingId, setDeletingId] = useState(null);
     const [loggingOut, setLoggingOut] = useState(false);
+
+    // Judging tab state
+    const [judgeScoreDrafts, setJudgeScoreDrafts] = useState({});
+    const [savingScoreId, setSavingScoreId] = useState(null);
+    const [togglingFinalistId, setTogglingFinalistId] = useState(null);
 
     useEffect(() => {
         if (authLoading) return;
@@ -98,7 +106,12 @@ export default function AdminPage({ setPage }) {
         const unsubSettings = onSnapshot(doc(db, 'settings', 'config'), (snap) => {
             if (snap.exists()) {
                 const data = snap.data();
-                setSettings({ registrationOpen: data.registrationOpen !== false, announcement: data.announcement || '' });
+                setSettings({
+                    registrationOpen: data.registrationOpen !== false,
+                    announcement: data.announcement || '',
+                    votingOpen: data.votingOpen === true,
+                    votingEndsAt: data.votingEndsAt || null,
+                });
                 setAnnouncementDraft(data.announcement || '');
             }
         });
@@ -115,6 +128,84 @@ export default function AdminPage({ setPage }) {
             unsubSubmissions();
         };
     }, [authLoading, isAdmin]);
+
+    // Live countdown for voting timer (purely for admin's own display)
+    useEffect(() => {
+        if (!settings.votingOpen || !settings.votingEndsAt) {
+            setVotingSecondsLeft(null);
+            return;
+        }
+        const endsAt = new Date(settings.votingEndsAt).getTime();
+        const tick = () => {
+            const diff = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+            setVotingSecondsLeft(diff);
+            if (diff === 0) {
+                // Auto-flip votingOpen to false once the timer runs out
+                setDoc(doc(db, 'settings', 'config'), { votingOpen: false }, { merge: true }).catch(() => { });
+            }
+        };
+        tick();
+        const interval = setInterval(tick, 1000);
+        return () => clearInterval(interval);
+    }, [settings.votingOpen, settings.votingEndsAt]);
+
+    const startVoting = async (durationSeconds) => {
+        try {
+            setStartingTimer(true);
+            const endsAt = new Date(Date.now() + durationSeconds * 1000).toISOString();
+            await setDoc(doc(db, 'settings', 'config'), {
+                votingOpen: true,
+                votingEndsAt: endsAt,
+            }, { merge: true });
+        } catch (err) {
+            console.error('Failed to start voting:', err);
+            alert('Failed to start voting.');
+        } finally {
+            setStartingTimer(false);
+        }
+    };
+
+    const stopVoting = async () => {
+        try {
+            setStartingTimer(true);
+            await setDoc(doc(db, 'settings', 'config'), { votingOpen: false }, { merge: true });
+        } catch (err) {
+            console.error('Failed to stop voting:', err);
+            alert('Failed to stop voting.');
+        } finally {
+            setStartingTimer(false);
+        }
+    };
+
+    // Resets audience vote counts on every team AND clears voterLog so
+    // the same devices/fingerprints can vote again (useful for testing).
+    const resetAllVotes = async () => {
+        const confirmed = window.confirm('Reset ALL audience votes? This clears vote counts on every team and lets everyone vote again.');
+        if (!confirmed) return;
+
+        try {
+            setResettingVotes(true);
+            const batch = writeBatch(db);
+
+            teams.forEach(team => {
+                batch.update(doc(db, 'teams', team.id), {
+                    audienceTotalMarks: 0,
+                    audienceVoteCount: 0,
+                });
+            });
+
+            const voterLogSnap = await getDocs(collection(db, 'voterLog'));
+            voterLogSnap.forEach(d => batch.delete(d.ref));
+
+            await batch.commit();
+            alert('All votes reset.');
+        } catch (err) {
+            console.error('Failed to reset votes:', err);
+            alert('Failed to reset votes.');
+        } finally {
+            setResettingVotes(false);
+        }
+    };
 
     const toggleRegistration = async () => {
         try {
@@ -183,6 +274,43 @@ export default function AdminPage({ setPage }) {
             alert('Failed to delete user.');
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    // Toggle whether a team is a "finalist" — finalist teams show up on the
+    // audience VotingPage and the smart-board LiveScorePage.
+    const toggleFinalist = async (team) => {
+        try {
+            setTogglingFinalistId(team.id);
+            await updateDoc(doc(db, 'teams', team.id), {
+                finalistTeam: !team.finalistTeam,
+            });
+        } catch (err) {
+            console.error('Failed to toggle finalist status:', err);
+            alert('Failed to update finalist status.');
+        } finally {
+            setTogglingFinalistId(null);
+        }
+    };
+
+    // Save a judge's score (out of 50) for a team.
+    const saveJudgeScore = async (teamId) => {
+        const raw = judgeScoreDrafts[teamId];
+        const value = Number(raw);
+
+        if (raw === undefined || raw === '' || isNaN(value) || value < 0 || value > 50) {
+            alert('Enter a valid score between 0 and 50.');
+            return;
+        }
+
+        try {
+            setSavingScoreId(teamId);
+            await updateDoc(doc(db, 'teams', teamId), { judgeScore: value });
+        } catch (err) {
+            console.error('Failed to save judge score:', err);
+            alert('Failed to save judge score.');
+        } finally {
+            setSavingScoreId(null);
         }
     };
 
@@ -278,6 +406,7 @@ export default function AdminPage({ setPage }) {
     const fullTeams = teams.filter(t => 1 + (t.members?.length || 0) >= 6).length;
     const teamsNeedingMembers = teams.length - fullTeams;
     const individualSubmissionsCount = submissions.filter(s => s.isIndividual).length;
+    const finalistCount = teams.filter(t => t.finalistTeam).length;
 
     const statusStyles = {
         accepted: 'bg-green-50 text-green-700 border-green-200',
@@ -352,6 +481,7 @@ export default function AdminPage({ setPage }) {
 
     const TABS = [
         { key: 'teams', label: 'Teams', count: teams.length },
+        { key: 'judging', label: 'Judging', count: finalistCount },
         { key: 'users', label: 'All Users', count: users.length },
         { key: 'individuals', label: 'Unassigned', count: standaloneIndividuals.length },
         { key: 'requests', label: 'Requests', count: requests.length },
@@ -391,7 +521,7 @@ export default function AdminPage({ setPage }) {
                 </div>
 
                 {/* Stat cards */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
                     {[
                         { label: 'Teams', value: teams.length, color: 'from-blue-500 to-blue-600' },
                         { label: 'Full Teams', value: fullTeams, color: 'from-green-500 to-green-600' },
@@ -399,6 +529,7 @@ export default function AdminPage({ setPage }) {
                         { label: 'Registered Users', value: registeredCount, color: 'from-orange-500 to-orange-600' },
                         { label: 'Unassigned', value: standaloneIndividuals.length, color: 'from-purple-500 to-purple-600' },
                         { label: 'Pending Requests', value: pendingRequests, color: 'from-emerald-500 to-emerald-600' },
+                        { label: 'Finalists', value: finalistCount, color: 'from-orange-500 to-red-500' },
                     ].map((stat, i) => (
                         <motion.div
                             key={stat.label}
@@ -575,6 +706,143 @@ export default function AdminPage({ setPage }) {
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </motion.div>
+                    )}
+
+
+
+                    {/* ===== JUDGING TAB ===== */}
+                    {tab === 'judging' && (
+                        <motion.div key="judging" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+                            <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 mb-2">
+                                <p className="text-sm font-semibold text-orange-700">
+                                    Mark teams as finalists to send them to the audience Voting page and the smart-board Live Leaderboard, then enter each team's judge score (out of 50).
+                                </p>
+                            </div>
+
+                            {/* Voting control panel */}
+                            <div className="bg-white rounded-2xl border-2 border-blue-100 p-5 mb-2 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <span className={`w-2.5 h-2.5 rounded-full ${settings.votingOpen && votingSecondsLeft > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                                    <div>
+                                        <p className="text-sm font-bold text-blue-900">
+                                            Audience Voting: {settings.votingOpen && votingSecondsLeft > 0 ? 'OPEN' : 'CLOSED'}
+                                        </p>
+                                        {settings.votingOpen && votingSecondsLeft > 0 && (
+                                            <p className="text-xs text-orange-600 font-semibold">
+                                                Closes in {Math.floor(votingSecondsLeft / 60)}:{String(votingSecondsLeft % 60).padStart(2, '0')}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        onClick={() => startVoting(60)}
+                                        disabled={startingTimer}
+                                        className="px-4 py-2 rounded-xl bg-green-50 text-green-700 border-2 border-green-200 hover:bg-green-500 hover:text-white text-xs font-bold uppercase tracking-wide disabled:opacity-60"
+                                    >
+                                        Start (1 min)
+                                    </button>
+                                    <button
+                                        onClick={() => startVoting(90)}
+                                        disabled={startingTimer}
+                                        className="px-4 py-2 rounded-xl bg-green-50 text-green-700 border-2 border-green-200 hover:bg-green-500 hover:text-white text-xs font-bold uppercase tracking-wide disabled:opacity-60"
+                                    >
+                                        Start (1.5 min)
+                                    </button>
+                                    <button
+                                        onClick={stopVoting}
+                                        disabled={startingTimer}
+                                        className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-500 hover:text-white text-xs font-bold uppercase tracking-wide disabled:opacity-60"
+                                    >
+                                        Stop Voting
+                                    </button>
+                                    <button
+                                        onClick={resetAllVotes}
+                                        disabled={resettingVotes}
+                                        className="px-4 py-2 rounded-xl bg-slate-50 text-slate-600 border-2 border-slate-200 hover:bg-slate-500 hover:text-white text-xs font-bold uppercase tracking-wide disabled:opacity-60"
+                                    >
+                                        {resettingVotes ? 'Resetting…' : 'Reset All Votes'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {teams.length === 0 ? (
+                                <p className="text-slate-400 text-center py-16">No teams found.</p>
+                            ) : (
+                                teams.map(team => {
+                                    const draft = judgeScoreDrafts[team.id] ?? (team.judgeScore ?? '');
+                                    const audienceAvg = team.audienceVoteCount
+                                        ? (team.audienceTotalMarks || 0) / team.audienceVoteCount
+                                        : 0;
+
+                                    return (
+                                        <div
+                                            key={team.id}
+                                            className={`bg-white rounded-2xl border-2 shadow-sm p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between transition-colors ${team.finalistTeam ? 'border-orange-300' : 'border-gray-200'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                <div className="w-11 h-11 rounded-xl bg-blue-900 text-white flex items-center justify-center font-bold flex-shrink-0">
+                                                    {team.teamName?.charAt(0)?.toUpperCase() || 'T'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-blue-900 text-lg truncate">{team.teamName}</p>
+                                                    <p className="text-sm text-slate-500">
+                                                        Judge: <span className="font-semibold text-orange-600">{team.judgeScore ?? '—'}</span>/50
+                                                        {team.finalistTeam && team.audienceVoteCount > 0 && (
+                                                            <span className="ml-2">
+                                                                · Audience avg: <span className="font-semibold text-blue-700">{audienceAvg.toFixed(1)}</span>/50 ({team.audienceVoteCount} votes)
+                                                            </span>
+                                                        )}
+                                                        {team.finalistTeam && (
+                                                            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-300 align-middle">
+                                                                Finalist
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                <button
+                                                    onClick={() => toggleFinalist(team)}
+                                                    disabled={togglingFinalistId === team.id}
+                                                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors disabled:opacity-60 ${team.finalistTeam
+                                                        ? 'bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-500 hover:text-white'
+                                                        : 'bg-green-50 text-green-600 border-2 border-green-200 hover:bg-green-500 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {togglingFinalistId === team.id
+                                                        ? 'Updating…'
+                                                        : team.finalistTeam
+                                                            ? 'Remove Finalist'
+                                                            : 'Mark Finalist'}
+                                                </button>
+
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    max={50}
+                                                    placeholder="0-50"
+                                                    value={draft}
+                                                    onChange={(e) => setJudgeScoreDrafts(prev => ({ ...prev, [team.id]: e.target.value }))}
+                                                    className="w-24 border border-gray-300 rounded-xl px-3 py-2 text-center font-semibold focus:outline-none focus:ring-2 focus:ring-orange-300"
+                                                />
+
+                                                <button
+                                                    onClick={() => saveJudgeScore(team.id)}
+                                                    disabled={savingScoreId === team.id}
+                                                    className="px-4 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wide"
+                                                >
+                                                    {savingScoreId === team.id ? 'Saving…' : 'Save Score'}
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 })

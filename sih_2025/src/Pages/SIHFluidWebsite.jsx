@@ -12,6 +12,8 @@ import MyRequestsPage from '../MyRequestsPage.jsx';
 import ProfilePage from './ProfilePage.jsx';
 import AdminPage from '../AdminPage.jsx';
 import AarambhPage from '../AarambhPage.jsx';
+import LiveScorePage from './LiveScorePage.jsx';
+import VotingPage from './Votingpage.jsx';
 import { collection, getDocs, query, where, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
@@ -228,17 +230,22 @@ const useSmoothScroll = () => {
 };
 
 // SIH Fluid Navigation
+// Slimmed down: shorter nav bar height, tighter gaps, smaller uppercase
+// labels so all items comfortably fit one line without feeling cramped
+// or overflowing on smaller desktop widths.
 const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
   const { user, isAdmin } = useAuth();
 
   const NAV_ITEMS = [
     { label: 'HOME', pageKey: 'home', action: () => setPage('home') },
-    { label: 'REGISTRATION', pageKey: 'registration-choice', action: () => setPage('registration-choice') },
-    { label: 'FIND TEAMMATES', pageKey: 'find-teammates', action: () => setPage('find-teammates') },
-    { label: 'MY REQUESTS', pageKey: 'my-requests', action: () => setPage('my-requests') },
+    { label: 'REGISTER', pageKey: 'registration-choice', action: () => setPage('registration-choice') },
+    { label: 'TEAMMATES', pageKey: 'find-teammates', action: () => setPage('find-teammates') },
+    { label: 'REQUESTS', pageKey: 'my-requests', action: () => setPage('my-requests') },
     { label: 'RESULTS', pageKey: 'results', action: () => setPage('results') },
     { label: 'AARAMBH', pageKey: 'aarambh', action: () => setPage('aarambh') },
     { label: 'TEAMS', pageKey: 'registered', action: () => setPage('registered') },
+    { label: 'VOTE', pageKey: 'vote', action: () => setPage('vote') },
+    { label: 'LIVE', pageKey: 'live-scores', action: () => setPage('live-scores') },
     {
       label: 'PROFILE',
       pageKey: user ? 'profile' : 'auth',
@@ -260,17 +267,18 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="fixed top-0 left-0 right-0 z-50 w-full bg-white/70 backdrop-blur-xl"
     >
-      <div className="w-full px-6 md:px-10">
-        <div className="flex items-center justify-between h-20">
+      <div className="w-full px-4 md:px-6">
+        <div className="flex items-center justify-between h-14">
 
-          {/* Left: Official Logos — pinned to the left edge of the navbar */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Left: Official Logos — pinned to the left edge of the navbar.
+              Shrunk from h-12/h-14 to h-8/h-9 to match the slimmer bar. */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <img
               src="/sih-logo.png"
               alt="Smart India Hackathon 2026"
-              className="h-12 w-auto object-contain"
+              className="h-8 w-auto object-contain"
             />
-            <div className="h-14 w-14 rounded-full overflow-hidden border border-gray-200 bg-white flex items-center justify-center flex-shrink-0">
+            <div className="h-9 w-9 rounded-full overflow-hidden border border-gray-200 bg-white flex items-center justify-center flex-shrink-0">
               <img
                 src="/lnct-hackathon-logo.png"
                 alt="LNCT Hackathon Club MCA"
@@ -278,35 +286,31 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
               />
             </div>
 
-            {/* Cute circular download badge — same size as the logo above it,
-                so it reads as part of the logo cluster rather than a random
-                button. Soft ping ring draws the eye; `download` on the <a>
-                saves the file instead of opening it in the browser. */}
+            {/* Cute circular download badge — sized to match the smaller logo cluster. */}
             <motion.a
               href="/idea.pdf"
               download="Idea.pdf"
               title="Download Idea PPT Format"
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.95 }}
-              className="relative h-14 w-14 rounded-full flex-shrink-0 bg-white border-2 border-orange-200 shadow-sm flex flex-col items-center justify-center text-orange-500"
+              className="relative h-9 w-9 rounded-full flex-shrink-0 bg-white border-2 border-orange-200 shadow-sm flex flex-col items-center justify-center text-orange-500"
             >
               <span className="absolute inset-0 rounded-full bg-orange-300 opacity-60 animate-ping" />
-              <svg className="relative w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="relative w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" />
               </svg>
-              <span className="relative text-[7px] font-black uppercase tracking-tight leading-none mt-0.5 text-blue-900">
-                Idea PPT
-              </span>
             </motion.a>
           </div>
 
-          {/* Right: Desktop Menu — pinned to the right edge of the navbar */}
-          <div className="hidden md:flex items-center space-x-8 flex-shrink-0">
+          {/* Right: Desktop Menu — pinned to the right edge of the navbar.
+              Tighter gaps (space-x-4) and smaller text (11px) so every item
+              fits comfortably on one line instead of stretching edge to edge. */}
+          <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.label}
                 onClick={item.action}
-                className={`px-2 py-2 text-[14px] font-semibold tracking-wide uppercase transition-colors duration-200 ${isActive(item.pageKey)
+                className={`px-1.5 py-1.5 text-[11px] font-semibold tracking-wide uppercase transition-colors duration-200 whitespace-nowrap ${isActive(item.pageKey)
                   ? 'text-orange-500 border-b-2 border-orange-500'
                   : 'text-blue-900 hover:text-orange-500'
                   }`}
@@ -318,7 +322,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
 
           {/* Right: Mobile Hamburger */}
           <motion.button
-            className="md:hidden p-2 rounded-lg bg-gray-100 text-blue-900"
+            className="md:hidden p-1.5 rounded-lg bg-gray-100 text-blue-900"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -327,7 +331,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
               animate={{ rotate: isMenuOpen ? 45 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </motion.div>
@@ -351,7 +355,7 @@ const SIHFluidNavigation = ({ page, setPage, isMenuOpen, setIsMenuOpen }) => {
                 <motion.button
                   key={item.label}
                   onClick={() => { item.action(); setIsMenuOpen(false); }}
-                  className={`block w-full text-left px-4 py-3 rounded-lg font-semibold text-sm tracking-wide uppercase transition-colors ${isActive(item.pageKey)
+                  className={`block w-full text-left px-4 py-2.5 rounded-lg font-semibold text-sm tracking-wide uppercase transition-colors ${isActive(item.pageKey)
                     ? 'text-orange-500 bg-orange-50'
                     : 'text-blue-900 hover:text-orange-500 hover:bg-orange-50'
                     }`}
@@ -640,9 +644,9 @@ const SIHFluidWebsiteInner = () => {
       </AnimatePresence>
 
       {/* Announcement — only shows on the Home page, styled like a live SIH notification.
-          pt-20 clears the fixed navbar (h-20); the banner itself is in normal
+          pt-14 clears the slimmer fixed navbar (h-14); the banner itself is in normal
           flow so it pushes the hero content below it down, never overlapping it. */}
-      <div className="pt-20">
+      <div className="pt-14">
         <AnimatePresence>
           {siteAnnouncement && page === 'home' && siteAnnouncement !== dismissedAnnouncement && (
             <SIHAnnouncementBanner
@@ -680,6 +684,10 @@ const SIHFluidWebsiteInner = () => {
           <ProfilePage setPage={setPage} showToast={showToast} showAlert={showAlert} />
         ) : page === 'admin' ? (
           <AdminPage setPage={setPage} />
+        ) : page === 'live-scores' ? (
+          <LiveScorePage />
+        ) : page === 'vote' ? (
+          <VotingPage />
         ) : null}
       </div>
 
