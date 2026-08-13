@@ -461,17 +461,17 @@ const SIHFluidWebsiteInner = () => {
   const [siteAnnouncement, setSiteAnnouncement] = useState('');
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState('');
-  const [showIdeaPPTModal, setShowIdeaPPTModal] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
 
-  // Show the Idea PPT download modal the moment the site is opened — once per
+  // Show the Vote nudge modal the moment the site is opened — once per
   // browser session (sessionStorage), so it grabs attention on first load but
   // doesn't pop up again every time the user just clicks between nav tabs.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const alreadySeen = sessionStorage.getItem('sih_idea_ppt_modal_seen');
+    const alreadySeen = sessionStorage.getItem('sih_vote_modal_seen');
     if (!alreadySeen) {
-      setShowIdeaPPTModal(true);
-      sessionStorage.setItem('sih_idea_ppt_modal_seen', 'true');
+      setShowVoteModal(true);
+      sessionStorage.setItem('sih_vote_modal_seen', 'true');
     }
   }, []);
 
@@ -578,17 +578,17 @@ const SIHFluidWebsiteInner = () => {
       {/* Navigation */}
       <SIHFluidNavigation page={page} setPage={setPage} isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
 
-      {/* Idea PPT download modal — the very first thing a visitor sees. Sits
+      {/* Vote nudge modal — the very first thing a visitor sees. Sits
           above the navbar (z-[60]) so it's genuinely the first thing to
           catch the eye, not a small badge someone has to notice on their own. */}
       <AnimatePresence>
-        {showIdeaPPTModal && (
+        {showVoteModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => setShowIdeaPPTModal(false)}
+            onClick={() => setShowVoteModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 10 }}
@@ -598,7 +598,7 @@ const SIHFluidWebsiteInner = () => {
               onClick={e => e.stopPropagation()}
             >
               <motion.button
-                onClick={() => setShowIdeaPPTModal(false)}
+                onClick={() => setShowVoteModal(false)}
                 aria-label="Close"
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -615,25 +615,23 @@ const SIHFluidWebsiteInner = () => {
                 transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               >
                 <svg className="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </motion.div>
 
-              <h3 className="text-xl font-black text-blue-900 mb-2">Idea PPT Format</h3>
+              <h3 className="text-xl font-black text-blue-900 mb-2">Vote for Your Favorite Team</h3>
               <p className="text-sm text-slate-500 mb-6">
-                Download the official Smart India Hackathon 2026 idea presentation format before you get started.
+                Audience voting for the Aarambh Final Round is live. Cast your vote now for the finalist teams.
               </p>
 
-              <a
-                href="/idea.pdf"
-                download="idea.pdf"
-                onClick={() => setShowIdeaPPTModal(false)}
+              <button
+                onClick={() => { setShowVoteModal(false); setPage('vote'); }}
                 className="block w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-2xl transition-colors"
               >
-                Download PPT Format
-              </a>
+                Go to Voting Page
+              </button>
               <button
-                onClick={() => setShowIdeaPPTModal(false)}
+                onClick={() => setShowVoteModal(false)}
                 className="mt-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
               >
                 Maybe later
