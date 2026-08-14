@@ -18,27 +18,27 @@ import { collection, getDocs, query, where, doc, onSnapshot } from 'firebase/fir
 import { db } from '../firebaseClient.js';
 import Lenis from 'lenis'
 const RESULTS_DATA = [
-  { team: 'Bug Slayers', ps: 14, innovation: 18, solution: 19, feasibility: 13, impact: 14, market: 4, ppt: 5, qa: 5 },
-  { team: 'RED FLAGS', ps: 14, innovation: 17, solution: 18, feasibility: 14, impact: 13, market: 4, ppt: 4, qa: 4 },
-  { team: 'Neuronix', ps: 12, innovation: 17, solution: 17, feasibility: 13, impact: 14, market: 3, ppt: 5, qa: 3 },
-  { team: 'Datadynamos', ps: 14, innovation: 16, solution: 14, feasibility: 11, impact: 10, market: 4, ppt: 4, qa: 4 },
   { team: 'Team Comet', ps: 10, innovation: 15, solution: 15, feasibility: 12, impact: 14, market: 2, ppt: 4, qa: 4 },
-  { team: 'SAARTHI', ps: 12, innovation: 12, solution: 12, feasibility: 12, impact: 10, market: 4, ppt: 5, qa: 3 },
+  { team: 'Neuronix', ps: 12, innovation: 17, solution: 17, feasibility: 13, impact: 14, market: 3, ppt: 5, qa: 3 },
+  { team: 'SAARTHI', ps: 12, innovation: 12, solution: 12, feasibility: 12, impact: 10, market: 4, ppt: 4, qa: 2 },
+  { team: 'Datadynamos', ps: 14, innovation: 16, solution: 14, feasibility: 11, impact: 10, market: 4, ppt: 4, qa: 4 },
+  { team: 'RED FLAGS', ps: 14, innovation: 17, solution: 18, feasibility: 14, impact: 13, market: 4, ppt: 4, qa: 4 },
   { team: 'INNOVATORS', ps: 12, innovation: 10, solution: 10, feasibility: 14, impact: 10, market: 3, ppt: 4, qa: 4 },
+  { team: 'Nova Sphere', ps: 7, innovation: 10, solution: 10, feasibility: 11, impact: 10, market: 3, ppt: 2, qa: 2 },
+  { team: 'Bug Slayers', ps: 14, innovation: 18, solution: 19, feasibility: 13, impact: 14, market: 4, ppt: 5, qa: 5 },
+  { team: 'Code Blooded', ps: 13, innovation: 16, solution: 16, feasibility: 10, impact: 11, market: 3, ppt: 2, qa: 2 },
+  { team: 'QUANTUM HIVE', ps: 11, innovation: 14, solution: 17, feasibility: 9, impact: 8, market: 2, ppt: 3, qa: 2 },
+  { team: 'TROJONS', ps: 13, innovation: 16, solution: 16, feasibility: 10, impact: 11, market: 3, ppt: 4, qa: 3 },
+  { team: 'CODEHUNTERS', ps: 10, innovation: 16, solution: 12, feasibility: 10, impact: 12, market: 3, ppt: 1, qa: 2 },
+  { team: 'Vairabha', ps: 12, innovation: 18, solution: 17, feasibility: 12, impact: 12, market: 3, ppt: 4, qa: 3 },
 ].map(t => ({
   ...t,
   total: t.ps + t.innovation + t.solution + t.feasibility + t.impact + t.market + t.ppt + t.qa
 })).sort((a, b) => b.total - a.total);
 
-// Teams jinke judging marks abhi tak nahi mile — separate list
+// ROADBLOCKS — team was absent, no marks given
 const PENDING_TEAMS = [
-  'Khushi Vyas',
-  'Code Blooded',
   'ROADBLOCKS',
-  'QUANTUM HIVE',
-  'TROJONS',
-  'CODEHUNTERS',
-  'Vaibhav',
 ];
 
 // label + max marks for every judging parameter — used in the full table
@@ -119,7 +119,7 @@ const ResultsPage = () => {
           })}
         </div>
 
-        {/* Full leaderboard with every parameter as a column */}
+        {/* Full leaderboard with every parameter as a column — top 8 highlighted */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -150,7 +150,11 @@ const ResultsPage = () => {
                 {RESULTS_DATA.map((team, idx) => (
                   <tr
                     key={team.team}
-                    className={`border-b border-blue-100 last:border-0 ${idx < 3 ? 'bg-orange-50/50 font-semibold' : idx % 2 ? 'bg-white' : 'bg-blue-50/40'
+                    className={`border-b border-blue-100 last:border-0 ${idx < 8
+                      ? 'bg-orange-100 font-semibold'
+                      : idx % 2
+                        ? 'bg-white'
+                        : 'bg-blue-50/40'
                       }`}
                   >
                     <td className="px-3 py-3 text-blue-900 sticky left-0 bg-inherit">#{idx + 1}</td>
@@ -172,34 +176,8 @@ const ResultsPage = () => {
           </div>
         </motion.div>
 
-        {/* Pending — teams jinki judging abhi baaki hai */}
-        {PENDING_TEAMS.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="bg-slate-50 border-2 border-slate-200 rounded-3xl overflow-hidden mt-6"
-          >
-            <div className="bg-slate-700 px-6 py-4">
-              <h2 className="text-white font-bold uppercase tracking-wide text-sm">
-                Yet to be Judged
-              </h2>
-            </div>
-            <div className="divide-y divide-slate-200">
-              {PENDING_TEAMS.map((team) => (
-                <div
-                  key={team}
-                  className="flex items-center justify-between px-6 py-3"
-                >
-                  <span className="text-slate-600 font-medium">{team}</span>
-                  <span className="text-xs font-bold uppercase tracking-wide text-slate-400 bg-slate-200 px-3 py-1 rounded-full">
-                    Pending
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+
+
       </motion.div>
     </div>
   );
